@@ -14,6 +14,6 @@ sed = synch.sed_flux(nu)
 # plot it
 load_mpl_rc()
 fig, ax = plt.subplots()
-plot_sed(nu, sed, ax=ax, label="Synchrotron")
+plot_sed(nu, sed, ax=ax, color="k", lw=2, label="Synchrotron")
 plt.show()
 fig.savefig("figures/synchro.pdf")

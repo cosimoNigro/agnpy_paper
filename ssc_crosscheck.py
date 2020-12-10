@@ -2,10 +2,8 @@ import numpy as np
 import pkg_resources
 import astropy.units as u
 from astropy.coordinates import Distance
-
-# import agnpy
 from agnpy.emission_regions import Blob
-from agnpy.synchrotron import Synchrotron
+from agnpy.compton import SynchrotronSelfCompton
 from agnpy.utils.plot import load_mpl_rc
 import matplotlib.pyplot as plt
 
@@ -22,13 +20,13 @@ delta_D = 10
 Gamma = 10
 # define emission region and radiative process
 blob = Blob(R_b, z, delta_D, Gamma, B, spectrum_norm, pwl_dict)
-synch = Synchrotron(blob)
+ssc = SynchrotronSelfCompton(blob)
 
 data_file_jetset = pkg_resources.resource_filename(
-    "agnpy", "data/sampled_seds/synch_pwl_jetset_1.1.2.txt"
+    "agnpy", "data/sampled_seds/ssc_pwl_jetset_1.1.2.txt"
 )
 data_file_ref = pkg_resources.resource_filename(
-    "agnpy", "data/sampled_seds/synch_figure_7_4_dermer_menon_2009.txt"
+    "agnpy", "data/sampled_seds/ssc_figure_7_4_dermer_menon_2009.txt"
 )
 
 # jetset SED
@@ -42,9 +40,9 @@ nu_ref = data_ref[:, 0] * u.Hz
 sed_ref = data_ref[:, 1] * u.Unit("erg cm-2 s-1")
 
 # agnpy SED recomputed on jetset frequencies
-sed_agnpy_nu_jetset = synch.sed_flux(nu_jetset)
+sed_agnpy_nu_jetset = ssc.sed_flux(nu_jetset)
 # agnpy SED recomputed on reference frequencies
-sed_agnpy_nu_ref = synch.sed_flux(nu_ref)
+sed_agnpy_nu_ref = ssc.sed_flux(nu_ref)
 
 # figure
 load_mpl_rc()
@@ -68,7 +66,7 @@ ax[0].loglog(
     label="Figure 7.4, Dermer & Menon (2009)",
 )
 ax[0].set_ylabel(r"$\nu F_{\nu}\,/\,({\rm erg}\,{\rm cm}^{-2}\,{\rm s}^{-1})$")
-ax[0].legend(loc="upper left", fontsize=10)
+ax[0].legend(loc="best", fontsize=10)
 ax[0].set_ylim([1e-13, 1e-9])
 # plot the deviation in the bottom panel
 deviation_jetset = 1 - sed_agnpy_nu_jetset / sed_jetset
@@ -100,4 +98,4 @@ ax[1].semilogx(
 ax[1].set_xlabel(r"$\nu\,/\,{\rm Hz}$")
 ax[1].legend(loc="best", fontsize=10)
 # plt.show()
-fig.savefig(f"figures/synchrotron_crosscheck.pdf")
+fig.savefig(f"figures/ssc_crosscheck.pdf")
