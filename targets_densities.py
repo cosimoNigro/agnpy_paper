@@ -52,13 +52,14 @@ ax.axhline(u_cmb.to_value("erg cm-3"), lw=2, ls="--", color="k", label="CMB")
 ax.loglog(r, u_disk, lw=2, color="crimson", label="Disk")
 ax.loglog(r, u_blr, lw=2, color="dodgerblue", label="Broad Line Region")
 ax.loglog(r, u_dt, lw=2, color="goldenrod", label="Dust Torus")
+"""
 ax.axhline(
     blob.u_ph_synch.to_value("erg cm-3"),
     lw=2,
     ls="--",
     color="darkgray",
     label="synchrotron",
-)
+)"""
 ax.legend(fontsize=12)
 ax.set_xlabel(r_label, fontsize=12)
 ax.set_ylabel(u_label, fontsize=12)
