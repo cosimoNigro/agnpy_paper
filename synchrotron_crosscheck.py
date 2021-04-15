@@ -28,7 +28,8 @@ data_file_jetset = pkg_resources.resource_filename(
     "agnpy", "data/reference_seds/jetset/synch_pwl_jetset_1.1.2.txt"
 )
 data_file_ref = pkg_resources.resource_filename(
-    "agnpy", "data/reference_seds/dermer_menon_2009/figure_7_4/synchrotron_gamma_max_1e5.txt"
+    "agnpy",
+    "data/reference_seds/dermer_menon_2009/figure_7_4/synchrotron_gamma_max_1e5.txt",
 )
 
 # comparison range for nu
@@ -38,15 +39,17 @@ nu_comparison_range = [1e9, 5e18] * u.Hz
 data_jetset = np.loadtxt(data_file_jetset, delimiter=",")
 nu_jetset = data_jetset[:, 0] * u.Hz
 # apply the comparison range
-comparison = (nu_jetset >= nu_comparison_range[0]) * (nu_jetset <= nu_comparison_range[-1]) 
+comparison = (nu_jetset >= nu_comparison_range[0]) * (
+    nu_jetset <= nu_comparison_range[-1]
+)
 nu_jetset = nu_jetset[comparison]
 sed_jetset = data_jetset[:, 1][comparison] * u.Unit("erg cm-2 s-1")
 
-# reference SED, Figure 7.4 Dermer 
+# reference SED, Figure 7.4 Dermer
 data_ref = np.loadtxt(data_file_ref, delimiter=",")
 nu_ref = data_ref[:, 0] * u.Hz
 # apply the comparison range
-comparison = (nu_ref >= nu_comparison_range[0]) * (nu_ref <= nu_comparison_range[-1]) 
+comparison = (nu_ref >= nu_comparison_range[0]) * (nu_ref <= nu_comparison_range[-1])
 nu_ref = nu_ref[comparison]
 sed_ref = data_ref[:, 1][comparison] * u.Unit("erg cm-2 s-1")
 
@@ -64,9 +67,7 @@ fig, ax = plt.subplots(
     figsize=(8, 6),
 )
 fig.set_tight_layout(False)
-ax[0].loglog(
-    nu_ref, sed_agnpy_nu_ref, ls="-", lw=2, color="crimson", label="agnpy"
-)
+ax[0].loglog(nu_ref, sed_agnpy_nu_ref, ls="-", lw=2, color="crimson", label="agnpy")
 ax[0].loglog(
     nu_ref,
     sed_ref,
@@ -80,7 +81,7 @@ ax[0].set_ylabel(r"$\nu F_{\nu}\,/\,({\rm erg}\,{\rm cm}^{-2}\,{\rm s}^{-1})$")
 ax[0].legend(loc="best", fontsize=10)
 ax[0].set_ylim([1e-13, 1e-9])
 # plot the deviation in the bottom panel
-deviation_jetset = sed_agnpy_nu_jetset / sed_jetset - 1 
+deviation_jetset = sed_agnpy_nu_jetset / sed_jetset - 1
 deviation_ref = sed_agnpy_nu_ref / sed_ref - 1
 ax[1].grid(False)
 ax[1].axhline(0, ls="-", color="darkgray")
@@ -96,7 +97,7 @@ ax[1].semilogx(
     ls="--",
     lw=1.5,
     color="k",
-    label=r"$\nu F_{\nu, \rm agnpy}\,/\,\nu F_{\nu, \rm reference} - 1$",
+    label=r"$\nu F_{\nu, \rm agnpy}\,/\,\nu F_{\nu, \rm ref} - 1$",
 )
 ax[1].semilogx(
     nu_jetset,
