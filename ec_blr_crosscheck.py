@@ -49,7 +49,7 @@ ec_ps_blr = ExternalCompton(blob, ps_blr, r=1e20 * u.cm)
 data_file_ref_blr_in = pkg_resources.resource_filename(
     "agnpy", "data/reference_seds/finke_2016/figure_10/ec_blr_r_1e16.txt"
 )
-# reference SED, Figure 11 Finke Dermer
+# reference SED, Figure 10 Finke Dermer
 data_ref = np.loadtxt(data_file_ref_blr_in, delimiter=",")
 nu_ref = data_ref[:, 0] * u.Hz
 sed_ref = data_ref[:, 1] * u.Unit("erg cm-2 s-1")
@@ -62,6 +62,7 @@ sed_agnpy_ps_blr = ec_ps_blr.sed_flux(nu_ref)
 
 # figure
 load_mpl_rc()
+plt.rcParams["text.usetex"] = True
 # gridspec plot setting
 fig = plt.figure(figsize=(12, 6), tight_layout=True)
 spec = gridspec.GridSpec(ncols=2, nrows=2, height_ratios=[2, 1], figure=fig)
@@ -142,6 +143,6 @@ ax4.semilogx(
 )
 ax4.legend(loc="best", fontsize=10)
 ax4.set_xlabel(r"$\nu\,/\,{\rm Hz}$")
-# plt.show()
+# save the figure
 fig.savefig(f"figures/ec_blr_crosscheck.png")
 fig.savefig(f"figures/ec_blr_crosscheck.pdf")

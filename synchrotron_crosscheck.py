@@ -60,6 +60,7 @@ sed_agnpy_nu_ref = synch.sed_flux(nu_ref)
 
 # figure
 load_mpl_rc()
+plt.rcParams["text.usetex"] = True
 fig, ax = plt.subplots(
     2,
     sharex=True,
@@ -74,7 +75,7 @@ ax[0].loglog(
     ls="--",
     lw=1.5,
     color="k",
-    label="Figure 7.4, Dermer & Menon (2009)",
+    label="Figure 7.4, Dermer \& Menon (2009)",
 )
 ax[0].loglog(nu_jetset, sed_jetset, ls="--", lw=1.5, color="dodgerblue", label="jetset")
 ax[0].set_ylabel(r"$\nu F_{\nu}\,/\,({\rm erg}\,{\rm cm}^{-2}\,{\rm s}^{-1})$")
@@ -110,6 +111,6 @@ ax[1].semilogx(
 ax[1].set_xlabel(r"$\nu\,/\,{\rm Hz}$")
 ax[1].legend(loc="best", fontsize=10)
 fig.suptitle("Synchrotron")
-plt.show()
+# save the figure
 fig.savefig(f"figures/synchrotron_crosscheck.png")
 fig.savefig(f"figures/synchrotron_crosscheck.pdf")
