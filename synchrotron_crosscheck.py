@@ -63,7 +63,7 @@ load_mpl_rc()
 fig, ax = plt.subplots(
     2,
     sharex=True,
-    gridspec_kw={"height_ratios": [2, 1], "hspace": 0.08, "top": 0.95},
+    gridspec_kw={"height_ratios": [2, 1], "hspace": 0.08, "top": 0.94},
     figsize=(8, 6),
 )
 fig.set_tight_layout(False)
@@ -109,5 +109,7 @@ ax[1].semilogx(
 )
 ax[1].set_xlabel(r"$\nu\,/\,{\rm Hz}$")
 ax[1].legend(loc="best", fontsize=10)
+fig.suptitle("Synchrotron")
 plt.show()
-fig.savefig(f"figures/ssc_crosscheck.pdf")
+fig.savefig(f"figures/synchrotron_crosscheck.png")
+fig.savefig(f"figures/synchrotron_crosscheck.pdf")

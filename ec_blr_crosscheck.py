@@ -4,11 +4,10 @@ import pkg_resources
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 from agnpy.emission_regions import Blob
-from agnpy.targets import PointSourceBehindJet, SphericalShellBLR, RingDustTorus
+from agnpy.targets import PointSourceBehindJet, SphericalShellBLR
 from agnpy.compton import ExternalCompton
 from agnpy.utils.plot import load_mpl_rc
 
-load_mpl_rc()
 
 # blob
 spectrum_norm = 6e42 * u.erg
@@ -26,7 +25,6 @@ z = 1
 delta_D = 40
 Gamma = 40
 blob = Blob(R_b, z, delta_D, Gamma, B, spectrum_norm, spectrum_dict)
-blob.set_gamma_size(400)
 
 L_disk = 2 * 1e46 * u.Unit("erg s-1")
 
@@ -39,9 +37,12 @@ blr = SphericalShellBLR(L_disk, xi_line, "Lyalpha", R_line)
 ps_blr = PointSourceBehindJet(blr.xi_line * L_disk, blr.epsilon_line)
 # EC
 # - inside the BLR, to be compared with the reference
+blob.set_gamma_size(500)
 ec_blr_in = ExternalCompton(blob, blr, r=1e16 * u.cm)
 # - outside the BLR, to be compared with the point-source approximation
+blob.set_gamma_size(200)
 ec_blr_out = ExternalCompton(blob, blr, r=1e20 * u.cm)
+blob.set_gamma_size(500)
 ec_ps_blr = ExternalCompton(blob, ps_blr, r=1e20 * u.cm)
 
 # plot SEDs
@@ -55,41 +56,41 @@ sed_ref = data_ref[:, 1] * u.Unit("erg cm-2 s-1")
 
 # recompute agnpy SEDs on the same frequency points of the reference
 sed_agnpy_blr_in = ec_blr_in.sed_flux(nu_ref)
-
-# SED outside the BLR, make more points in frequency
-nu = np.logspace(
-    np.log10(nu_ref[0].to_value("Hz")),
-    np.log10(nu_ref[-1].to_value("Hz")),
-    100
-) * u.Hz
-sed_agnpy_blr_out = ec_blr_out.sed_flux(nu)
-sed_agnpy_ps_blr = ec_ps_blr.sed_flux(nu)
+sed_agnpy_blr_out = ec_blr_out.sed_flux(nu_ref)
+sed_agnpy_ps_blr = ec_ps_blr.sed_flux(nu_ref)
 
 
 # figure
 load_mpl_rc()
 # gridspec plot setting
-fig = plt.figure(figsize=(12, 10), tight_layout=True)
+fig = plt.figure(figsize=(12, 6), tight_layout=True)
 spec = gridspec.GridSpec(ncols=2, nrows=2, height_ratios=[2, 1], figure=fig)
 ax1 = fig.add_subplot(spec[0, 0])
-ax2 = fig.add_subplot(spec[0, 1], sharey=ax1)
+ax2 = fig.add_subplot(spec[0, 1])
 ax3 = fig.add_subplot(spec[1, 0], sharex=ax1)
 ax4 = fig.add_subplot(spec[1, 1], sharex=ax2, sharey=ax3)
 # SED inside the BLR
-ax1.loglog(
-    nu_ref, sed_agnpy_blr_in, ls="-", lw=2, color="crimson", label="agnpy"
-)
+ax1.loglog(nu_ref, sed_agnpy_blr_in, ls="-", lw=2, color="crimson", label="agnpy")
 ax1.loglog(
     nu_ref, sed_ref, ls="--", lw=1.5, color="k", label="Figure 10, Finke (2016)",
 )
 ax1.set_ylabel(r"$\nu F_{\nu}\,/\,({\rm erg}\,{\rm cm}^{-2}\,{\rm s}^{-1})$")
 ax1.legend(loc="best", fontsize=10)
+ax1.set_title(
+    "EC on Spherical Shell BLR, "
+    + r"$r=1.1 \times 10^{16}\,{\rm cm} < R_{\rm Ly \alpha}$"
+)
 # SED outside the BLR
 ax2.loglog(
-    nu, sed_agnpy_blr_out, ls="-", lw=2, color="crimson", label="agnpy, full calculation"
+    nu_ref,
+    sed_agnpy_blr_out,
+    ls="-",
+    lw=2,
+    color="crimson",
+    label="agnpy, full calculation",
 )
 ax2.loglog(
-    nu,
+    nu_ref,
     sed_agnpy_ps_blr,
     ls="--",
     lw=1.5,
@@ -97,9 +98,13 @@ ax2.loglog(
     label="agnpy, point-source approximation",
 )
 ax2.legend(loc="best", fontsize=10)
+ax2.set_title(
+    "EC on Spherical Shell BLR, "
+    + r"$r=1.1 \times 10^{20}\,{\rm cm} \gg R_{\rm Ly \alpha}$"
+)
 # plot the deviation from the reference in the bottom panel
 deviation_ref = sed_agnpy_blr_in / sed_ref - 1
-deviation_approx = sed_agnpy_ps_blr / sed_agnpy_blr_out - 1
+deviation_approx = sed_agnpy_blr_out / sed_agnpy_ps_blr - 1
 ax3.grid(False)
 ax3.axhline(0, ls="-", color="darkgray")
 ax3.axhline(0.2, ls="--", color="darkgray")
@@ -116,7 +121,8 @@ ax3.semilogx(
     color="k",
     label=r"$\nu F_{\nu, \rm agnpy}\,/\,\nu F_{\nu, \rm ref} - 1$",
 )
-ax4.set_xlabel(r"$\nu\,/\,{\rm Hz}$")
+ax3.legend(loc="best", fontsize=10)
+ax3.set_xlabel(r"$\nu\,/\,{\rm Hz}$")
 # plot the deviation from the point like approximation in the bottom panel
 ax4.grid(False)
 ax4.axhline(0, ls="-", color="darkgray")
@@ -127,14 +133,15 @@ ax4.axhline(-0.3, ls=":", color="darkgray")
 ax4.set_ylim([-0.5, 0.5])
 ax4.set_yticks([-0.4, -0.2, 0.0, 0.2, 0.4])
 ax4.semilogx(
-    nu,
+    nu_ref,
     deviation_approx,
     ls="--",
     lw=1.5,
     color="k",
     label=r"$\nu F_{\nu, \rm agnpy}\,/\,\nu F_{\nu, \rm approx} - 1$",
 )
-ax4.set_xlabel(r"$\nu\,/\,{\rm Hz}$")
 ax4.legend(loc="best", fontsize=10)
-plt.show()
+ax4.set_xlabel(r"$\nu\,/\,{\rm Hz}$")
+# plt.show()
+fig.savefig(f"figures/ec_blr_crosscheck.png")
 fig.savefig(f"figures/ec_blr_crosscheck.pdf")
