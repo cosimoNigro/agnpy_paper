@@ -28,7 +28,6 @@ blob = Blob(R_b, z, delta_D, Gamma, B, spectrum_norm, spectrum_dict)
 
 L_disk = 2 * 1e46 * u.Unit("erg s-1")
 
-# check BLR for very large distance
 # dust torus definition
 T_dt = 1e3 * u.K
 xi_dt = 0.1
@@ -45,11 +44,10 @@ ec_dt_far = ExternalCompton(blob, dt, r=1e22 * u.cm)
 blob.set_gamma_size(600)
 ec_ps_dt = ExternalCompton(blob, ps_dt, r=1e22 * u.cm)
 
-# plot SEDs
+# reference SED, Figure 11 Finke Dermer
 data_file_ref_dt_near = pkg_resources.resource_filename(
     "agnpy", "data/reference_seds/finke_2016/figure_11/ec_dt_r_1e18.txt"
 )
-# reference SED, Figure 11 Finke Dermer
 data_ref = np.loadtxt(data_file_ref_dt_near, delimiter=",")
 nu_ref = data_ref[:, 0] * u.Hz
 sed_ref = data_ref[:, 1] * u.Unit("erg cm-2 s-1")
