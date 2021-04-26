@@ -73,12 +73,12 @@ ax4 = fig.add_subplot(spec[1, 1], sharex=ax2, sharey=ax3)
 # SED inside the BLR
 ax1.loglog(nu_ref, sed_agnpy_blr_in, ls="-", lw=2, color="crimson", label="agnpy")
 ax1.loglog(
-    nu_ref, sed_ref, ls="--", lw=1.5, color="k", label="Figure 10, Finke (2016)",
+    nu_ref, sed_ref, ls="--", lw=1.5, color="k", label="figure 10, Finke (2016)",
 )
 ax1.set_ylabel(r"$\nu F_{\nu}\,/\,({\rm erg}\,{\rm cm}^{-2}\,{\rm s}^{-1})$")
 ax1.legend(loc="best", fontsize=10)
 ax1.set_title(
-    "EC on Spherical Shell BLR, "
+    "EC on spherical shell BLR, "
     + r"$r=1.1 \times 10^{16}\,{\rm cm} < R_{\rm Ly \alpha}$"
 )
 # SED outside the BLR
@@ -100,7 +100,7 @@ ax2.loglog(
 )
 ax2.legend(loc="best", fontsize=10)
 ax2.set_title(
-    "EC on Spherical Shell BLR, "
+    "EC on spherical shell BLR, "
     + r"$r=1.1 \times 10^{20}\,{\rm cm} \gg R_{\rm Ly \alpha}$"
 )
 # plot the deviation from the reference in the bottom panel

@@ -78,11 +78,11 @@ ax4 = fig.add_subplot(spec[1, 1], sharex=ax2, sharey=ax3)
 # SED inside the BLR
 ax1.loglog(nu_ref, sed_agnpy_disk_near, ls="-", lw=2, color="crimson", label="agnpy")
 ax1.loglog(
-    nu_ref, sed_ref, ls="--", lw=1.5, color="k", label="Figure 8, Finke (2016)",
+    nu_ref, sed_ref, ls="--", lw=1.5, color="k", label="figure 8, Finke (2016)",
 )
 ax1.set_ylabel(r"$\nu F_{\nu}\,/\,({\rm erg}\,{\rm cm}^{-2}\,{\rm s}^{-1})$")
 ax1.legend(loc="best", fontsize=10)
-ax1.set_title("EC on Shakura Sunyaev Disk, " + r"$r=10^{17}\,{\rm cm} < R_{\rm out}$")
+ax1.set_title("EC on Shakura Sunyaev disk, " + r"$r=10^{17}\,{\rm cm} < R_{\rm out}$")
 # SED outside the BLR
 ax2.loglog(
     nu_ref,
@@ -113,7 +113,7 @@ ax2.loglog(
 # shade the area between the two SED of the point source approximations
 ax2.fill_between(nu_ref, sed_agnpy_disk_R_in, sed_agnpy_disk_R_out, color="silver")
 ax2.legend(loc="best", fontsize=10)
-ax2.set_title("EC on Shakura Sunyaev Disk, " + r"$r=10^{21}\,{\rm cm} \gg R_{\rm out}$")
+ax2.set_title("EC on Shakura Sunyaev disk, " + r"$r=10^{21}\,{\rm cm} \gg R_{\rm out}$")
 # plot the deviation from the reference in the bottom panel
 deviation_ref = sed_agnpy_disk_near / sed_ref - 1
 deviation_approx_in = sed_agnpy_disk_far / sed_agnpy_disk_R_in - 1

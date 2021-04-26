@@ -71,11 +71,11 @@ ax4 = fig.add_subplot(spec[1, 1], sharex=ax2, sharey=ax3)
 # SED inside the BLR
 ax1.loglog(nu_ref, sed_agnpy_dt_near, ls="-", lw=2, color="crimson", label="agnpy")
 ax1.loglog(
-    nu_ref, sed_ref, ls="--", lw=1.5, color="k", label="Figure 10, Finke (2016)",
+    nu_ref, sed_ref, ls="--", lw=1.5, color="k", label="figure 10, Finke (2016)",
 )
 ax1.set_ylabel(r"$\nu F_{\nu}\,/\,({\rm erg}\,{\rm cm}^{-2}\,{\rm s}^{-1})$")
 ax1.legend(loc="best", fontsize=10)
-ax1.set_title("EC on Ring DT, " + r"$r=10^{18}\,{\rm cm} < R_{\rm DT}$")
+ax1.set_title("EC on ring DT, " + r"$r=10^{18}\,{\rm cm} < R_{\rm DT}$")
 # SED outside the BLR
 ax2.loglog(
     nu_ref,
@@ -94,7 +94,7 @@ ax2.loglog(
     label="agnpy, point-source approximation",
 )
 ax2.legend(loc="best", fontsize=10)
-ax2.set_title("EC on Ring DT, " + r"$r=10^{22}\,{\rm cm} \gg R_{\rm DT}$")
+ax2.set_title("EC on ring DT, " + r"$r=10^{22}\,{\rm cm} \gg R_{\rm DT}$")
 # plot the deviation from the reference in the bottom panel
 deviation_ref = sed_agnpy_dt_near / sed_ref - 1
 deviation_approx = sed_agnpy_dt_far / sed_agnpy_ps_dt - 1

@@ -56,12 +56,12 @@ ax4 = fig.add_subplot(spec[1, 1], sharex=ax2, sharey=ax3)
 # optical depth near the DT
 ax1.loglog(nu_ref, tau_dt_near, ls="-", lw=2, color="crimson", label="agnpy")
 ax1.loglog(
-    nu_ref, tau_ref, ls="--", lw=1.5, color="k", label="Figure 10, Finke (2016)",
+    nu_ref, tau_ref, ls="--", lw=1.5, color="k", label="figure 10, Finke (2016)",
 )
 ax1.set_ylabel(r"$\tau_{\gamma\gamma}$")
 ax1.legend(loc="best", fontsize=10)
 ax1.set_title(
-    "Absorption on Ring DT, "
+    "absorption on ring DT, "
     + r"$r=1.1 \times 10^{18}\,{\rm cm} < R_{\rm dt},\,\mu_s=0$"
 )
 ax1.set_ylim([1e-1, 1e3])
@@ -79,7 +79,7 @@ ax2.loglog(
 )
 ax2.legend(loc="best", fontsize=10)
 ax2.set_title(
-    "Absorption on Ring DT, " + r"$r=10^{22}\,{\rm cm} \gg R_{\rm dt},\,\mu_s \neq 0$"
+    "absorption on ring DT, " + r"$r=10^{22}\,{\rm cm} \gg R_{\rm dt},\,\mu_s \neq 0$"
 )
 ax2.set_ylim([1e-5, 1e-1])
 # plot the deviation from the reference in the bottom panel
