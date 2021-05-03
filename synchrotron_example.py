@@ -9,11 +9,14 @@ import matplotlib.pyplot as plt
 blob = Blob()
 synch = Synchrotron(blob)
 # compute the SED over an array of frequencies
-nu = np.logspace(8, 23) * u.Hz
+nu = np.logspace(8, 23, 100) * u.Hz
 sed = synch.sed_flux(nu)
-# plot it
+
+# plot
 load_mpl_rc()
+plt.rcParams["text.usetex"] = True
 fig, ax = plt.subplots()
-plot_sed(nu, sed, ax=ax, color="k", lw=2, label="Synchrotron")
-plt.show()
-fig.savefig("figures/synchro.png")
+plot_sed(nu, sed, ax=ax, color="k", lw=2, label="synchrotron")
+ax.legend(loc="best")
+fig.savefig("figures/synchrotron_example.png")
+fig.savefig("figures/synchrotron_example.pdf")
