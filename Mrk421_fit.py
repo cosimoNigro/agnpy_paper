@@ -176,7 +176,7 @@ fitter = Fit(sed, model, stat=Chi2(), method=LevMar())
 fitter.estmethod = Confidence()
 fitter.estmethod.parallel = True
 min_x = 1e11
-max_x = 1e29
+max_x = 1e30
 sed.notice(min_x, max_x)
 
 # perform the first fit, we are only varying the spectral parameters
@@ -237,9 +237,11 @@ ax.errorbar(
     color="k",
     label="Mrk 421, Abdo et al. (2011)",
 )
-ax.loglog(nu, synch_sed + ssc_sed, ls="-", lw=2, color="crimson", label="agnpy, total")
-ax.loglog(nu, synch_sed, ls="--", lw=1.2, color="goldenrod", label="agnpy, synchrotron")
-ax.loglog(nu, ssc_sed, ls="--", lw=1.2, color="dodgerblue", label="agnpy, SSC")
+ax.loglog(
+    nu, synch_sed + ssc_sed, ls="-", lw=2.1, color="crimson", label="agnpy, total"
+)
+ax.loglog(nu, synch_sed, ls="--", lw=1.3, color="goldenrod", label="agnpy, synchrotron")
+ax.loglog(nu, ssc_sed, ls="--", lw=1.3, color="dodgerblue", label="agnpy, SSC")
 ax.set_xlabel(sed_x_label)
 ax.set_ylabel(sed_y_label)
 ax.set_ylim([1e-14, 1e-9])

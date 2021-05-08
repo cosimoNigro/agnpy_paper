@@ -1,7 +1,7 @@
 # import numpy, astropy and matplotlib for basic functionalities
 import numpy as np
 import astropy.units as u
-from astropy.constants import k_B, m_e
+from astropy.constants import k_B, m_e, c, G, M_sun
 from astropy.coordinates import Distance
 from pathlib import Path
 from astropy.table import Table
@@ -13,7 +13,7 @@ from agnpy.emission_regions import Blob
 from agnpy.spectra import BrokenPowerLaw
 from agnpy.synchrotron import Synchrotron
 from agnpy.compton import SynchrotronSelfCompton, ExternalCompton
-from agnpy.targets import RingDustTorus
+from agnpy.targets import SSDisk, RingDustTorus
 from agnpy.utils.plot import load_mpl_rc, sed_x_label, sed_y_label
 
 # import sherpa classes
@@ -26,14 +26,14 @@ from sherpa.estmethods import Confidence
 
 
 mec2 = m_e.to("erg", equivalencies=u.mass_energy())
+gamma_size = 400
+gamma_to_integrate = np.logspace(0, 7, gamma_size)
 
 
-class BrokenPowerLawEC_DT(model.RegriddableModel1D):
-    """wrapper of agnpy's synchrotron, SSC and EC classes. A broken power-law is assumed for the electron spectrum.
-    """
+class BrokenPowerLawEC(model.RegriddableModel1D):
+    """wrapper of agnpy's synchrotron, SSC and EC classes. A broken power-law is assumed for the electron spectrum."""
 
     def __init__(self, name="bpwl_ec"):
-
         # EED parameters
         self.log10_k_e = model.Parameter(name, "log10_k_e", -1.0, min=-10.0, max=10.0)
         self.p1 = model.Parameter(name, "p1", 2.1, min=1.0, max=5.0)
@@ -53,16 +53,21 @@ class BrokenPowerLawEC_DT(model.RegriddableModel1D):
         self.d_L = model.Parameter(name, "d_L", 1e27, min=1e25, max=1e33)
 
         # emission region parameters
-        self.delta_D = model.Parameter(name, "delta_D", 10, min=1, max=50)
+        self.delta_D = model.Parameter(name, "delta_D", 10, min=1, max=30)
         self.mu_s = model.Parameter(name, "mu_s", 0.9, min=0.0, max=1.0)
         self.log10_B = model.Parameter(name, "log10_B", 0.0, min=-3.0, max=1.0)
         self.alpha_jet = model.Parameter(name, "alpha_jet", 0.05, min=0.0, max=1.1)
         self.log10_r = model.Parameter(name, "log10_r", 17.0, min=16.0, max=20.0)
 
-        # DT parameters
+        # disk parameters
         self.log10_L_disk = model.Parameter(
             name, "log10_L_disk", 45.0, min=42.0, max=48.0
         )
+        self.log10_M_BH = model.Parameter(name, "log10_M_BH", 42, min=32, max=45)
+        self.m_dot = model.Parameter(name, "m_dot", 1e26, min=1e24, max=1e30)
+        self.R_in = model.Parameter(name, "R_in", 1e14, min=1e12, max=1e16)
+        self.R_out = model.Parameter(name, "R_out", 1e17, min=1e12, max=1e19)
+        # DT parameters
         self.xi_dt = model.Parameter(name, "xi_dt", 0.6, min=0.0, max=1.0)
         self.T_dt = model.Parameter(name, "T_dt", 1.0e3, min=1.0e2, max=1.0e4)
         self.R_dt = model.Parameter(name, "R_dt", 2.5e18, min=1.0e17, max=1.0e19)
@@ -85,6 +90,10 @@ class BrokenPowerLawEC_DT(model.RegriddableModel1D):
                 self.alpha_jet,
                 self.log10_r,
                 self.log10_L_disk,
+                self.log10_M_BH,
+                self.m_dot,
+                self.R_in,
+                self.R_out,
                 self.xi_dt,
                 self.T_dt,
                 self.R_dt,
@@ -108,6 +117,10 @@ class BrokenPowerLawEC_DT(model.RegriddableModel1D):
             alpha_jet,
             log10_r,
             log10_L_disk,
+            log10_M_BH,
+            m_dot,
+            R_in,
+            R_out,
             xi_dt,
             T_dt,
             R_dt,
@@ -121,12 +134,17 @@ class BrokenPowerLawEC_DT(model.RegriddableModel1D):
         d_L *= u.cm
         B = 10 ** log10_B * u.G
         L_disk = 10 ** log10_L_disk * u.Unit("erg s-1")
+        M_BH = 10 ** log10_M_BH * u.Unit("g")
+        m_dot *= u.Unit("g s-1")
+        R_in *= u.cm
+        R_out *= u.cm
         R_dt *= u.cm
         T_dt *= u.K
         r = 10 ** log10_r * u.cm
         R_b = r * alpha_jet
         eps_dt = 2.7 * (k_B * T_dt / mec2).to_value("")
 
+        # non-thermal components
         sed_synch = Synchrotron.evaluate_sed_flux(
             x,
             z,
@@ -142,6 +160,7 @@ class BrokenPowerLawEC_DT(model.RegriddableModel1D):
             gamma_min,
             gamma_max,
             ssa=True,
+            gamma=gamma_to_integrate,
         )
         sed_ssc = SynchrotronSelfCompton.evaluate_sed_flux(
             x,
@@ -157,8 +176,10 @@ class BrokenPowerLawEC_DT(model.RegriddableModel1D):
             gamma_b,
             gamma_min,
             gamma_max,
+            ssa=True,
+            gamma=gamma_to_integrate,
         )
-        sed_dt = ExternalCompton.evaluate_sed_flux_dt(
+        sed_ec_dt = ExternalCompton.evaluate_sed_flux_dt(
             x,
             z,
             d_L,
@@ -177,22 +198,26 @@ class BrokenPowerLawEC_DT(model.RegriddableModel1D):
             gamma_b,
             gamma_min,
             gamma_max,
+            gamma=gamma_to_integrate,
         )
-        return sed_synch + sed_ssc + sed_dt
+        # thermal components
+        sed_bb_disk = SSDisk.evaluate_multi_T_bb_norm_sed(
+            x, z, L_disk, M_BH, m_dot, R_in, R_out, d_L
+        )
+        sed_bb_dt = RingDustTorus.evaluate_bb_norm_sed(
+            x, z, xi_dt * L_disk, T_dt, R_dt, d_L
+        )
+        return sed_synch + sed_ssc + sed_ec_dt + sed_bb_disk + sed_bb_dt
 
 
 # read the 1D data
 sed_path = pkg_resources.resource_filename(
-    "agnpy", "data/mwl_seds/PKS1510-089_2015.ecsv"
+    "agnpy", "data/mwl_seds/PKS1510-089_2012.ecsv"
 )
 sed_table = Table.read(sed_path)
-x = sed_table["E"]
-y = sed_table["nuFnu"]
-y_err = sed_table["nuFnu_err_lo"]
-# convert to classical SED units
-x.convert_unit_to("Hz", equivalencies=u.spectral())
-y.convert_unit_to("erg cm-2 s-1")
-y_err.convert_unit_to("erg cm-2  s-1")
+x = sed_table["nu"]
+y = sed_table["flux"]
+y_err = sed_table["flux_err_lo"]
 # remove the points with orders of magnitude smaller error, they are upper limits
 UL = y_err < (y * 1e-3)
 # add an arbitrary systematic error of 10% on the flux of all points
@@ -200,19 +225,26 @@ syst_err = 0.1 * y
 # load the SED points in the sherpa data object
 sed = data.Data1D("sed", x[~UL], y[~UL], staterror=y_err[~UL], syserror=syst_err[~UL])
 
-
 # global parameters of the blob and the DT
 # galaxy distance
 z = 0.361
 d_L = Distance(z=z).to("cm")
 # blob
 Gamma = 20
-alpha_jet = 1 / Gamma  # jet opening angle
+alpha_jet = 0.047  # jet opening angle
 delta_D = 25
 Beta = np.sqrt(1 - 1 / np.power(Gamma, 2))  # jet relativistic speed
 mu_s = (1 - 1 / (Gamma * delta_D)) / Beta  # viewing angle
-# dust torus
+B = 0.2 * u.G
+# disk
 L_disk = 6.7e45 * u.Unit("erg s-1")  # disk luminosity
+M_BH = 5.71 * 1e7 * M_sun
+eta = 1 / 12
+m_dot = (L_disk / (eta * c ** 2)).to("g s-1")
+R_g = ((G * M_BH) / c ** 2).to("cm")
+R_in = 6 * R_g
+R_out = 10000 * R_g
+# DT
 xi_dt = 0.6  # fraction of disk luminosity reprocessed by the DT
 R_dt = 6.47e18 * u.cm  # radius of DT
 T_dt = 1e3 * u.K
@@ -220,19 +252,30 @@ T_dt = 1e3 * u.K
 r = 6e17 * u.cm
 # instance of the model wrapping angpy functionalities
 # load and set all the blob parameters
-model = BrokenPowerLawEC_DT()
+model = BrokenPowerLawEC()
 # - AGN parameters
+# -- distances
 model.z = z
 model.z.freeze()
 model.d_L = d_L.cgs.value
 model.d_L.freeze()
+# -- SS disk
 model.log10_L_disk = np.log10(L_disk.to_value("erg s-1"))
 model.log10_L_disk.freeze()
-model.xi_dt = 0.6
+model.log10_M_BH = np.log10(M_BH.to_value("g"))
+model.log10_M_BH.freeze()
+model.m_dot = m_dot.to_value("g s-1")
+model.m_dot.freeze()
+model.R_in = R_in.to_value("cm")
+model.R_in.freeze()
+model.R_out = R_out.to_value("cm")
+model.R_out.freeze()
+# -- Dust Torus
+model.xi_dt = xi_dt
 model.xi_dt.freeze()
-model.T_dt = T_dt.to("K").value
+model.T_dt = T_dt.to_value("K")
 model.T_dt.freeze()
-model.R_dt = R_dt.to("cm").value
+model.R_dt = R_dt.to_value("cm")
 model.R_dt.freeze()
 # - blob parameters
 model.delta_D = delta_D
@@ -243,26 +286,33 @@ model.alpha_jet = alpha_jet
 model.alpha_jet.freeze()
 model.log10_r = np.log10(r.to_value("cm"))
 model.log10_r.freeze()
-model.log10_B = np.log10(0.35)
+model.log10_B = np.log10(B.to_value("G"))
 model.log10_B.freeze()
 # - EED
-model.log10_k_e = np.log10(2)
+model.log10_k_e = np.log10(0.15)
 model.p1 = 2.1
 model.p2 = 3.5
-model.log10_gamma_b = np.log10(150)
-model.log10_gamma_min = np.log10(5)
+model.log10_gamma_b = np.log10(350)
+model.log10_gamma_min = np.log10(2)
 model.log10_gamma_min.freeze()
-model.log10_gamma_max = np.log10(4e4)
+model.log10_gamma_max = np.log10(5e4)
 model.log10_gamma_max.freeze()
 print(model)
+# plot the starting model
+nu = np.logspace(9, 30, 200)
+plt.errorbar(sed.x, sed.y, yerr=sed.get_error(), ls="", marker=".", color="k")
+plt.loglog(nu, model(nu), color="crimson")
+plt.ylim([1e-14, 1e-8])
+plt.show()
+
 
 # fit using the Levenberg-Marquardt optimiser
 fitter = Fit(sed, model, stat=Chi2(), method=LevMar())
 # use confidence to estimate the errors
 # fitter.estmethod = Confidence()
 # fitter.estmethod.parallel = True
-min_x = 1e10
-max_x = 1e27
+min_x = 1e11
+max_x = 1e30
 sed.notice(min_x, max_x)
 print(fitter)
 
@@ -276,14 +326,19 @@ print(results_1.format())
 print("-- second iteration with spectral and blob parameters free")
 # model.delta_D.thaw()
 model.log10_B.thaw()
-model.log10_r.thaw()
+# model.log10_r.thaw()
 results_2 = fitter.fit()
 errors_2 = fitter.est_errors()
 print("-- fit succesful?", results_2.succeeded)
 print(results_2.format())
 print("-- errors estimation:")
 print(errors_2.format())
-
+# plot the final model
+nu = np.logspace(9, 30, 200)
+plt.errorbar(sed.x, sed.y, yerr=sed.get_error(), ls="", marker=".", color="k")
+plt.loglog(nu, model(nu), color="crimson")
+plt.ylim([1e-14, 1e-8])
+plt.show()
 
 # plot the best fit model with the individual components
 k_e = 10 ** model.log10_k_e.val * u.Unit("cm-3")
@@ -295,6 +350,7 @@ gamma_min = 10 ** model.log10_gamma_min.val
 gamma_max = 10 ** model.log10_gamma_max.val
 r = 10 ** model.log10_r.val * u.cm
 R_b = r * alpha_jet
+delta_D = model.delta_D.val
 # blob definition
 parameters = {
     "p1": p1,
@@ -305,24 +361,43 @@ parameters = {
 }
 spectrum_dict = {"type": "BrokenPowerLaw", "parameters": parameters}
 blob = Blob(
-    R_b, z, delta_D, Gamma, B, k_e, spectrum_dict, spectrum_norm_type="differential"
+    R_b,
+    z,
+    delta_D,
+    Gamma,
+    B,
+    k_e,
+    spectrum_dict,
+    spectrum_norm_type="differential",
+    gamma_size=gamma_size,
 )
-blob.set_gamma_size(400)
-# DT definition
+# Disk and DT definition
+L_disk = 10 ** model.log10_L_disk.val * u.Unit("erg s-1")
+M_BH = 10 ** model.log10_M_BH.val * u.Unit("g")
+m_dot = model.m_dot.val * u.Unit("g s-1")
+eta = (L_disk / (m_dot * c ** 2)).to_value("")
+R_in = model.R_in.val * u.cm
+R_out = model.R_out.val * u.cm
+disk = SSDisk(M_BH, L_disk, eta, R_in, R_out)
 dt = RingDustTorus(L_disk, xi_dt, T_dt, R_dt=R_dt)
+# print model components
+print(blob)
+print(disk)
+print(dt)
 
 # radiative processes
-nu_synch = np.logspace(9, 20, 300) * u.Hz
 synch = Synchrotron(blob, ssa=True)
 ssc = SynchrotronSelfCompton(blob, synch)
 ec_dt = ExternalCompton(blob, dt, r)
 # SEDs
-nu = np.logspace(9, 30, 300) * u.Hz
-dt_sed = dt.sed_flux(nu, blob.z)
-ec_dt_sed = ec_dt.sed_flux(nu)
-ssc_sed = ssc.sed_flux(nu)
+nu = np.logspace(9, 30, 400) * u.Hz
 synch_sed = synch.sed_flux(nu)
-total_sed = synch_sed + ssc_sed + ec_dt_sed + dt_sed
+ssc_sed = ssc.sed_flux(nu)
+ec_dt_sed = ec_dt.sed_flux(nu)
+disk_bb_sed = disk.sed_flux(nu, z)
+dt_bb_sed = dt.sed_flux(nu, z)
+
+total_sed = synch_sed + ssc_sed + ec_dt_sed + disk_bb_sed + dt_bb_sed
 
 load_mpl_rc()
 plt.rcParams["text.usetex"] = True
@@ -336,16 +411,18 @@ ax.errorbar(
     color="k",
     label="PKS 1510-089, Ahnen et al. (2017)",
 )
-ax.loglog(nu, total_sed, ls="-", lw=2, color="crimson", label="agnpy, total")
-ax.loglog(nu, synch_sed, ls="--", lw=1.2, color="goldenrod", label="agnpy, synchrotron")
-ax.loglog(nu, ssc_sed, ls="--", lw=1.2, color="dodgerblue", label="agnpy, SSC")
-ax.loglog(nu, ec_dt_sed, ls="--", lw=1.2, color="cadetblue", label="agnpy, EC on DT")
-ax.loglog(nu, dt_sed, ls="-.", lw=1.2, color="dimgray", label="agnpy, DT blackbody")
-ax.loglog(nu, total_sed, ls="-", lw=1.2, color="crimson", label="agnpy, total")
+ax.loglog(nu, total_sed, ls="-", lw=2.1, color="crimson", label="agnpy, total")
+ax.loglog(nu, synch_sed, ls="--", lw=1.3, color="goldenrod", label="agnpy, synchrotron")
+ax.loglog(nu, ssc_sed, ls="--", lw=1.3, color="dodgerblue", label="agnpy, SSC")
+ax.loglog(nu, ec_dt_sed, ls="--", lw=1.3, color="cadetblue", label="agnpy, EC on DT")
+ax.loglog(
+    nu, disk_bb_sed, ls="-.", lw=1.3, color="dimgray", label="agnpy, disk blackbody"
+)
+ax.loglog(nu, dt_bb_sed, ls="-.", lw=1.3, color="dimgray", label="agnpy, DT blackbody")
 ax.set_xlabel(sed_x_label)
 ax.set_ylabel(sed_y_label)
-ax.set_ylim([1e-14, 1e-9])
-ax.legend(loc="best")
+ax.set_ylim([1e-15, 1e-8])
+ax.legend(loc="best", fontsize=10)
 plt.show()
 fig.savefig("figures/PKS1510-089_fit.png")
 fig.savefig("figures/PKS1510-089_fit.pdf")
