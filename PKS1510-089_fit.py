@@ -33,7 +33,7 @@ gamma_to_integrate = np.logspace(0, 7, gamma_size)
 class BrokenPowerLawEC(model.RegriddableModel1D):
     """wrapper of agnpy's synchrotron, SSC and EC classes. A broken power-law is assumed for the electron spectrum."""
 
-    def __init__(self, name="bpwl_ec"):
+    def __init__(self, name="ec"):
         # EED parameters
         self.log10_k_e = model.Parameter(name, "log10_k_e", -1.0, min=-10.0, max=10.0)
         self.p1 = model.Parameter(name, "p1", 2.1, min=1.0, max=5.0)
@@ -235,7 +235,7 @@ alpha_jet = 0.047  # jet opening angle
 delta_D = 25
 Beta = np.sqrt(1 - 1 / np.power(Gamma, 2))  # jet relativistic speed
 mu_s = (1 - 1 / (Gamma * delta_D)) / Beta  # viewing angle
-B = 0.2 * u.G
+B = 0.5 * u.G
 # disk
 L_disk = 6.7e45 * u.Unit("erg s-1")  # disk luminosity
 M_BH = 5.71 * 1e7 * M_sun
@@ -246,7 +246,7 @@ R_in = 6 * R_g
 R_out = 10000 * R_g
 # DT
 xi_dt = 0.6  # fraction of disk luminosity reprocessed by the DT
-R_dt = 6.47e18 * u.cm  # radius of DT
+R_dt = 2.15 * u.pc  # radius of DT
 T_dt = 1e3 * u.K
 # location of the emission region
 r = 6e17 * u.cm
@@ -289,13 +289,13 @@ model.log10_r.freeze()
 model.log10_B = np.log10(B.to_value("G"))
 model.log10_B.freeze()
 # - EED
-model.log10_k_e = np.log10(0.15)
+model.log10_k_e = np.log10(1e-2)
 model.p1 = 2.1
 model.p2 = 3.5
-model.log10_gamma_b = np.log10(350)
-model.log10_gamma_min = np.log10(2)
+model.log10_gamma_b = np.log10(9e2)
+model.log10_gamma_min = np.log10(3)
 model.log10_gamma_min.freeze()
-model.log10_gamma_max = np.log10(5e4)
+model.log10_gamma_max = np.log10(6e4)
 model.log10_gamma_max.freeze()
 print(model)
 # plot the starting model
@@ -311,7 +311,7 @@ fitter = Fit(sed, model, stat=Chi2(), method=LevMar())
 # use confidence to estimate the errors
 # fitter.estmethod = Confidence()
 # fitter.estmethod.parallel = True
-min_x = 1e11
+min_x = 1e10
 max_x = 1e30
 sed.notice(min_x, max_x)
 print(fitter)
@@ -325,7 +325,7 @@ print(results_1.format())
 # perform the second fit, we are varying also the blob parameters
 print("-- second iteration with spectral and blob parameters free")
 # model.delta_D.thaw()
-model.log10_B.thaw()
+# model.log10_B.thaw()
 # model.log10_r.thaw()
 results_2 = fitter.fit()
 errors_2 = fitter.est_errors()
@@ -418,11 +418,11 @@ ax.loglog(nu, ec_dt_sed, ls="--", lw=1.3, color="cadetblue", label="agnpy, EC on
 ax.loglog(
     nu, disk_bb_sed, ls="-.", lw=1.3, color="dimgray", label="agnpy, disk blackbody"
 )
-ax.loglog(nu, dt_bb_sed, ls="-.", lw=1.3, color="dimgray", label="agnpy, DT blackbody")
+ax.loglog(nu, dt_bb_sed, ls=":", lw=1.3, color="dimgray", label="agnpy, DT blackbody")
 ax.set_xlabel(sed_x_label)
 ax.set_ylabel(sed_y_label)
 ax.set_ylim([1e-15, 1e-8])
-ax.legend(loc="best", fontsize=10)
+ax.legend(loc="best", fontsize=9)
 plt.show()
 fig.savefig("figures/PKS1510-089_fit.png")
 fig.savefig("figures/PKS1510-089_fit.pdf")

@@ -196,6 +196,13 @@ print("-- fit succesful?", results_2.succeeded)
 print(results_2.format())
 print("-- errors estimation:")
 print(errors_2.format())
+# plot the final model
+nu = np.logspace(9, 30, 200)
+plt.errorbar(sed.x, sed.y, yerr=sed.get_error(), ls="", marker=".", color="k")
+plt.loglog(nu, model(nu), color="crimson")
+plt.ylim([1e-14, 1e-9])
+plt.show()
+
 
 # plot the best fit model with the individual components
 k_e = 10 ** model.log10_k_e.val * u.Unit("cm-3")
