@@ -53,7 +53,7 @@ class BrokenPowerLawEC(model.RegriddableModel1D):
         self.d_L = model.Parameter(name, "d_L", 1e27, min=1e25, max=1e33)
 
         # emission region parameters
-        self.delta_D = model.Parameter(name, "delta_D", 10, min=1, max=30)
+        self.delta_D = model.Parameter(name, "delta_D", 10, min=1, max=40)
         self.mu_s = model.Parameter(name, "mu_s", 0.9, min=0.0, max=1.0)
         self.log10_B = model.Parameter(name, "log10_B", 0.0, min=-3.0, max=1.0)
         self.alpha_jet = model.Parameter(name, "alpha_jet", 0.05, min=0.0, max=1.1)
@@ -212,7 +212,7 @@ class BrokenPowerLawEC(model.RegriddableModel1D):
 
 # read the 1D data
 sed_path = pkg_resources.resource_filename(
-    "agnpy", "data/mwl_seds/PKS1510-089_2012.ecsv"
+    "agnpy", "data/mwl_seds/PKS1510-089_low.ecsv"
 )
 sed_table = Table.read(sed_path)
 x = sed_table["nu"]
@@ -235,7 +235,7 @@ alpha_jet = 0.047  # jet opening angle
 delta_D = 25
 Beta = np.sqrt(1 - 1 / np.power(Gamma, 2))  # jet relativistic speed
 mu_s = (1 - 1 / (Gamma * delta_D)) / Beta  # viewing angle
-B = 0.5 * u.G
+B = 0.35 * u.G
 # disk
 L_disk = 6.7e45 * u.Unit("erg s-1")  # disk luminosity
 M_BH = 5.71 * 1e7 * M_sun
@@ -246,10 +246,10 @@ R_in = 6 * R_g
 R_out = 10000 * R_g
 # DT
 xi_dt = 0.6  # fraction of disk luminosity reprocessed by the DT
-R_dt = 2.15 * u.pc  # radius of DT
+R_dt = 6.5 * 1e18 * u.cm  # radius of DT
 T_dt = 1e3 * u.K
 # location of the emission region
-r = 6e17 * u.cm
+r = 7e17 * u.cm
 # instance of the model wrapping angpy functionalities
 # load and set all the blob parameters
 model = BrokenPowerLawEC()
@@ -289,13 +289,13 @@ model.log10_r.freeze()
 model.log10_B = np.log10(B.to_value("G"))
 model.log10_B.freeze()
 # - EED
-model.log10_k_e = np.log10(1e-2)
-model.p1 = 2.1
+model.log10_k_e = np.log10(0.5)
+model.p1 = 1.9
 model.p2 = 3.5
-model.log10_gamma_b = np.log10(9e2)
-model.log10_gamma_min = np.log10(3)
+model.log10_gamma_b = np.log10(130)
+model.log10_gamma_min = np.log10(2)
 model.log10_gamma_min.freeze()
-model.log10_gamma_max = np.log10(6e4)
+model.log10_gamma_max = np.log10(2e5)
 model.log10_gamma_max.freeze()
 print(model)
 # plot the starting model
@@ -309,9 +309,9 @@ plt.show()
 # fit using the Levenberg-Marquardt optimiser
 fitter = Fit(sed, model, stat=Chi2(), method=LevMar())
 # use confidence to estimate the errors
-# fitter.estmethod = Confidence()
-# fitter.estmethod.parallel = True
-min_x = 1e10
+fitter.estmethod = Confidence()
+fitter.estmethod.parallel = True
+min_x = 1e11
 max_x = 1e30
 sed.notice(min_x, max_x)
 print(fitter)
@@ -325,14 +325,15 @@ print(results_1.format())
 # perform the second fit, we are varying also the blob parameters
 print("-- second iteration with spectral and blob parameters free")
 # model.delta_D.thaw()
-# model.log10_B.thaw()
-# model.log10_r.thaw()
+model.log10_B.thaw()
+model.log10_r.thaw()
 results_2 = fitter.fit()
 errors_2 = fitter.est_errors()
 print("-- fit succesful?", results_2.succeeded)
 print(results_2.format())
 print("-- errors estimation:")
 print(errors_2.format())
+
 # plot the final model
 nu = np.logspace(9, 30, 200)
 plt.errorbar(sed.x, sed.y, yerr=sed.get_error(), ls="", marker=".", color="k")
@@ -342,15 +343,15 @@ plt.show()
 
 # plot the best fit model with the individual components
 k_e = 10 ** model.log10_k_e.val * u.Unit("cm-3")
-B = 10 ** model.log10_B.val * u.G
 p1 = model.p1.val
 p2 = model.p2.val
 gamma_b = 10 ** model.log10_gamma_b.val
 gamma_min = 10 ** model.log10_gamma_min.val
 gamma_max = 10 ** model.log10_gamma_max.val
+B = 10 ** model.log10_B.val * u.G
 r = 10 ** model.log10_r.val * u.cm
-R_b = r * alpha_jet
 delta_D = model.delta_D.val
+R_b = r * alpha_jet
 # blob definition
 parameters = {
     "p1": p1,
@@ -369,7 +370,7 @@ blob = Blob(
     k_e,
     spectrum_dict,
     spectrum_norm_type="differential",
-    gamma_size=gamma_size,
+    gamma_size=500,
 )
 # Disk and DT definition
 L_disk = 10 ** model.log10_L_disk.val * u.Unit("erg s-1")
@@ -390,7 +391,7 @@ synch = Synchrotron(blob, ssa=True)
 ssc = SynchrotronSelfCompton(blob, synch)
 ec_dt = ExternalCompton(blob, dt, r)
 # SEDs
-nu = np.logspace(9, 30, 400) * u.Hz
+nu = np.logspace(9, 30, 300) * u.Hz
 synch_sed = synch.sed_flux(nu)
 ssc_sed = ssc.sed_flux(nu)
 ec_dt_sed = ec_dt.sed_flux(nu)
@@ -402,6 +403,39 @@ total_sed = synch_sed + ssc_sed + ec_dt_sed + disk_bb_sed + dt_bb_sed
 load_mpl_rc()
 plt.rcParams["text.usetex"] = True
 fig, ax = plt.subplots()
+ax.loglog(
+    nu / (1 + z), total_sed, ls="-", lw=2.1, color="crimson", label="agnpy, total"
+)
+ax.loglog(
+    nu / (1 + z),
+    synch_sed,
+    ls="--",
+    lw=1.3,
+    color="goldenrod",
+    label="agnpy, synchrotron",
+)
+ax.loglog(
+    nu / (1 + z), ssc_sed, ls="--", lw=1.3, color="dodgerblue", label="agnpy, SSC"
+)
+ax.loglog(
+    nu / (1 + z), ec_dt_sed, ls="--", lw=1.3, color="seagreen", label="agnpy, EC on DT"
+)
+ax.loglog(
+    nu / (1 + z),
+    disk_bb_sed,
+    ls="-.",
+    lw=1.3,
+    color="dimgray",
+    label="agnpy, disk blackbody",
+)
+ax.loglog(
+    nu / (1 + z),
+    dt_bb_sed,
+    ls=":",
+    lw=1.3,
+    color="dimgray",
+    label="agnpy, DT blackbody",
+)
 ax.errorbar(
     sed.x,
     sed.y,
@@ -409,20 +443,14 @@ ax.errorbar(
     marker=".",
     ls="",
     color="k",
-    label="PKS 1510-089, Ahnen et al. (2017)",
+    label="PKS 1510-089, Acciari et al. (2019)",
 )
-ax.loglog(nu, total_sed, ls="-", lw=2.1, color="crimson", label="agnpy, total")
-ax.loglog(nu, synch_sed, ls="--", lw=1.3, color="goldenrod", label="agnpy, synchrotron")
-ax.loglog(nu, ssc_sed, ls="--", lw=1.3, color="dodgerblue", label="agnpy, SSC")
-ax.loglog(nu, ec_dt_sed, ls="--", lw=1.3, color="cadetblue", label="agnpy, EC on DT")
-ax.loglog(
-    nu, disk_bb_sed, ls="-.", lw=1.3, color="dimgray", label="agnpy, disk blackbody"
-)
-ax.loglog(nu, dt_bb_sed, ls=":", lw=1.3, color="dimgray", label="agnpy, DT blackbody")
 ax.set_xlabel(sed_x_label)
 ax.set_ylabel(sed_y_label)
-ax.set_ylim([1e-15, 1e-8])
-ax.legend(loc="best", fontsize=9)
+ax.set_ylim([1e-14, 1e-8])
+ax.legend(
+    loc="upper center", fontsize=10, ncol=2,
+)
 plt.show()
 fig.savefig("figures/PKS1510-089_fit.png")
 fig.savefig("figures/PKS1510-089_fit.pdf")

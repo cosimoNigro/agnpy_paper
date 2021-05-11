@@ -52,7 +52,7 @@ ax4 = fig.add_subplot(spec[1, 1], sharex=ax2, sharey=ax3)
 # SED inside the BLR
 ax1.loglog(nu_ref, tau_in_blr, ls="-", lw=2, color="crimson", label="agnpy")
 ax1.loglog(
-    nu_ref, tau_ref, ls="--", lw=1.5, color="k", label="figure 10, Finke (2016)",
+    nu_ref, tau_ref, ls="--", lw=1.5, color="k", label="Fig. 14, Finke (2016)",
 )
 ax1.set_ylabel(r"$\tau_{\gamma\gamma}$")
 ax1.legend(loc="best", fontsize=10)

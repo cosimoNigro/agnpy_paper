@@ -225,12 +225,18 @@ spectrum_dict = {"type": "BrokenPowerLaw", "parameters": parameters}
 blob = Blob(
     R_b, z, delta_D, delta_D, B, k_e, spectrum_dict, spectrum_norm_type="differential"
 )
+print(blob)
+print(f"* power in magnetic field: {blob.P_jet_B:.2e}")
+print(f"* power in particles: {blob.P_jet_e:.2e}")
+
+# compute the obtained emission region
 synch = Synchrotron(blob)
 ssc = SynchrotronSelfCompton(blob)
 # make a finer grid to compute the SED
 nu = np.logspace(10, 30, 300) * u.Hz
 synch_sed = synch.sed_flux(nu)
 ssc_sed = ssc.sed_flux(nu)
+
 
 load_mpl_rc()
 plt.rcParams["text.usetex"] = True

@@ -71,7 +71,7 @@ ax4 = fig.add_subplot(spec[1, 1], sharex=ax2, sharey=ax3)
 # SED inside the BLR
 ax1.loglog(nu_ref, sed_agnpy_dt_near, ls="-", lw=2, color="crimson", label="agnpy")
 ax1.loglog(
-    nu_ref, sed_ref, ls="--", lw=1.5, color="k", label="figure 10, Finke (2016)",
+    nu_ref, sed_ref, ls="--", lw=1.5, color="k", label="Fig. 11, Finke (2016)",
 )
 ax1.set_ylabel(r"$\nu F_{\nu}\,/\,({\rm erg}\,{\rm cm}^{-2}\,{\rm s}^{-1})$")
 ax1.legend(loc="best", fontsize=10)
