@@ -63,5 +63,5 @@ ax.axhline(
 ax.legend(loc="best")
 ax.set_xlabel(r_label, fontsize=12)
 ax.set_ylabel(u_label, fontsize=12)
-fig.savefig("figures/target_densities_example.png")
-fig.savefig("figures/target_densities_example.pdf")
+fig.savefig("figures/figure_3.png")
+fig.savefig("figures/figure_3.pdf")

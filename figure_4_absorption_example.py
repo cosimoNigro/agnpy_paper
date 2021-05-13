@@ -74,5 +74,5 @@ ax.fill_between(nu, np.zeros(len(nu)), total_tau, alpha=0.5, color="darkgray", z
 ax.legend(loc="best")
 ax.set_xlabel(r"$\nu\,/\,Hz$")
 ax.set_ylabel(r"$\tau_{\gamma \gamma}$")
-fig.savefig("figures/absorption_example.pdf")
-fig.savefig("figures/absorption_example.png")
+fig.savefig("figures/figure_4.pdf")
+fig.savefig("figures/figure_4.png")

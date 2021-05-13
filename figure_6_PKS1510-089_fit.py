@@ -391,7 +391,7 @@ synch = Synchrotron(blob, ssa=True)
 ssc = SynchrotronSelfCompton(blob, synch)
 ec_dt = ExternalCompton(blob, dt, r)
 # SEDs
-nu = np.logspace(9, 30, 300) * u.Hz
+nu = np.logspace(9, 30, 200) * u.Hz
 synch_sed = synch.sed_flux(nu)
 ssc_sed = ssc.sed_flux(nu)
 ec_dt_sed = ec_dt.sed_flux(nu)
@@ -452,5 +452,5 @@ ax.legend(
     loc="upper center", fontsize=10, ncol=2,
 )
 plt.show()
-fig.savefig("figures/PKS1510-089_fit.png")
-fig.savefig("figures/PKS1510-089_fit.pdf")
+fig.savefig("figures/figure_6.png")
+fig.savefig("figures/figure_6.pdf")

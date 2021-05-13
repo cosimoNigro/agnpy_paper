@@ -45,8 +45,8 @@ for r, color in zip(
     )
 ax.legend(loc="best")
 ax.set_title("EC on dust torus")
-fig.savefig("figures/ec_dt_example.png")
-fig.savefig("figures/ec_dt_example.pdf")
+fig.savefig("figures/figure_2.png")
+fig.savefig("figures/figure_2.pdf")
 
 # print the constraint on the spectral parameters
 constraints = SpectralConstraints(blob)

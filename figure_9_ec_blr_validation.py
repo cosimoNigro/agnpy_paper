@@ -4,7 +4,7 @@ import pkg_resources
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 from agnpy.emission_regions import Blob
-from agnpy.targets import PointSourceBehindJet, RingDustTorus
+from agnpy.targets import PointSourceBehindJet, SphericalShellBLR
 from agnpy.compton import ExternalCompton
 from agnpy.utils.plot import load_mpl_rc
 
@@ -28,34 +28,36 @@ blob = Blob(R_b, z, delta_D, Gamma, B, spectrum_norm, spectrum_dict)
 
 L_disk = 2 * 1e46 * u.Unit("erg s-1")
 
-# dust torus definition
-T_dt = 1e3 * u.K
-xi_dt = 0.1
-dt = RingDustTorus(L_disk, xi_dt, T_dt)
-# point source approximating the DT
-ps_dt = PointSourceBehindJet(dt.xi_dt * L_disk, dt.epsilon_dt)
+# check BLR for very large distance
+# BLR definition
+xi_line = 0.024
+R_line = 1.1e17 * u.cm
+blr = SphericalShellBLR(L_disk, xi_line, "Lyalpha", R_line)
+# point source approximating the BLR
+ps_blr = PointSourceBehindJet(blr.xi_line * L_disk, blr.epsilon_line)
 # EC
-# - near the DT, to be compared with the reference
+# - inside the BLR, to be compared with the reference
 blob.set_gamma_size(500)
-ec_dt_near = ExternalCompton(blob, dt, r=1e18 * u.cm)
-# - far from the DT, to be compared with the point-source approximation
-blob.set_gamma_size(300)
-ec_dt_far = ExternalCompton(blob, dt, r=1e22 * u.cm)
-blob.set_gamma_size(600)
-ec_ps_dt = ExternalCompton(blob, ps_dt, r=1e22 * u.cm)
+ec_blr_in = ExternalCompton(blob, blr, r=1e16 * u.cm)
+# - outside the BLR, to be compared with the point-source approximation
+blob.set_gamma_size(200)
+ec_blr_out = ExternalCompton(blob, blr, r=1e20 * u.cm)
+blob.set_gamma_size(500)
+ec_ps_blr = ExternalCompton(blob, ps_blr, r=1e20 * u.cm)
 
-# reference SED, Figure 11 Finke Dermer
-data_file_ref_dt_near = pkg_resources.resource_filename(
-    "agnpy", "data/reference_seds/finke_2016/figure_11/ec_dt_r_1e18.txt"
+# plot SEDs
+data_file_ref_blr_in = pkg_resources.resource_filename(
+    "agnpy", "data/reference_seds/finke_2016/figure_10/ec_blr_r_1e16.txt"
 )
-data_ref = np.loadtxt(data_file_ref_dt_near, delimiter=",")
+# reference SED, Figure 10 Finke Dermer
+data_ref = np.loadtxt(data_file_ref_blr_in, delimiter=",")
 nu_ref = data_ref[:, 0] * u.Hz
 sed_ref = data_ref[:, 1] * u.Unit("erg cm-2 s-1")
 
 # recompute agnpy SEDs on the same frequency points of the reference
-sed_agnpy_dt_near = ec_dt_near.sed_flux(nu_ref)
-sed_agnpy_dt_far = ec_dt_far.sed_flux(nu_ref)
-sed_agnpy_ps_dt = ec_ps_dt.sed_flux(nu_ref)
+sed_agnpy_blr_in = ec_blr_in.sed_flux(nu_ref)
+sed_agnpy_blr_out = ec_blr_out.sed_flux(nu_ref)
+sed_agnpy_ps_blr = ec_ps_blr.sed_flux(nu_ref)
 
 
 # figure
@@ -69,17 +71,20 @@ ax2 = fig.add_subplot(spec[0, 1])
 ax3 = fig.add_subplot(spec[1, 0], sharex=ax1)
 ax4 = fig.add_subplot(spec[1, 1], sharex=ax2, sharey=ax3)
 # SED inside the BLR
-ax1.loglog(nu_ref, sed_agnpy_dt_near, ls="-", lw=2, color="crimson", label="agnpy")
+ax1.loglog(nu_ref, sed_agnpy_blr_in, ls="-", lw=2, color="crimson", label="agnpy")
 ax1.loglog(
-    nu_ref, sed_ref, ls="--", lw=1.5, color="k", label="Fig. 11, Finke (2016)",
+    nu_ref, sed_ref, ls="--", lw=1.5, color="k", label="Fig. 10, Finke (2016)",
 )
 ax1.set_ylabel(r"$\nu F_{\nu}\,/\,({\rm erg}\,{\rm cm}^{-2}\,{\rm s}^{-1})$")
 ax1.legend(loc="best", fontsize=10)
-ax1.set_title("EC on ring DT, " + r"$r=10^{18}\,{\rm cm} < R_{\rm DT}$")
+ax1.set_title(
+    "EC on spherical shell BLR, "
+    + r"$r=1.1 \times 10^{16}\,{\rm cm} < R_{\rm Ly \alpha}$"
+)
 # SED outside the BLR
 ax2.loglog(
     nu_ref,
-    sed_agnpy_dt_far,
+    sed_agnpy_blr_out,
     ls="-",
     lw=2,
     color="crimson",
@@ -87,17 +92,20 @@ ax2.loglog(
 )
 ax2.loglog(
     nu_ref,
-    sed_agnpy_ps_dt,
+    sed_agnpy_ps_blr,
     ls="--",
     lw=1.5,
     color="k",
     label="agnpy, point-source approximation",
 )
 ax2.legend(loc="best", fontsize=10)
-ax2.set_title("EC on ring DT, " + r"$r=10^{22}\,{\rm cm} \gg R_{\rm DT}$")
+ax2.set_title(
+    "EC on spherical shell BLR, "
+    + r"$r=1.1 \times 10^{20}\,{\rm cm} \gg R_{\rm Ly \alpha}$"
+)
 # plot the deviation from the reference in the bottom panel
-deviation_ref = sed_agnpy_dt_near / sed_ref - 1
-deviation_approx = sed_agnpy_dt_far / sed_agnpy_ps_dt - 1
+deviation_ref = sed_agnpy_blr_in / sed_ref - 1
+deviation_approx = sed_agnpy_blr_out / sed_agnpy_ps_blr - 1
 ax3.grid(False)
 ax3.axhline(0, ls="-", color="darkgray")
 ax3.axhline(0.2, ls="--", color="darkgray")
@@ -136,5 +144,5 @@ ax4.semilogx(
 ax4.legend(loc="best", fontsize=10)
 ax4.set_xlabel(r"$\nu\,/\,{\rm Hz}$")
 # save the figure
-fig.savefig(f"figures/ec_dt_crosscheck.png")
-fig.savefig(f"figures/ec_dt_crosscheck.pdf")
+fig.savefig(f"figures/figure_9.png")
+fig.savefig(f"figures/figure_9.pdf")
