@@ -443,7 +443,7 @@ ax.errorbar(
     marker=".",
     ls="",
     color="k",
-    label="PKS 1510-089, Acciari et al. (2019)",
+    label="PKS 1510-089, Acciari et al. (2018)",
 )
 ax.set_xlabel(sed_x_label)
 ax.set_ylabel(sed_y_label)
