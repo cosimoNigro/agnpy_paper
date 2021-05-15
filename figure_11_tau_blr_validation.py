@@ -58,7 +58,7 @@ ax1.set_ylabel(r"$\tau_{\gamma\gamma}$")
 ax1.legend(loc="best", fontsize=10)
 ax1.set_title(
     "abs. on spherical shell BLR, "
-    + r"$r=1.1 \times 10^{16}\,{\rm cm} < R_{\rm Ly \alpha},\,\mu_s=0$"
+    + r"$r=1.1 \times 10^{16}\,{\rm cm} < R_{\rm Ly \alpha},\,\mu_{\rm s}=0$"
 )
 ax1.set_ylim([1e-1, 1e3])
 # SED outside the BLR
@@ -81,7 +81,7 @@ ax2.loglog(
 ax2.legend(loc="best", fontsize=10)
 ax2.set_title(
     "abs. on spherical shell BLR, "
-    + r"$r=1.1 \times 10^{20}\,{\rm cm} \gg R_{\rm Ly \alpha},\,\mu_s \neq 0$"
+    + r"$r=1.1 \times 10^{20}\,{\rm cm} \gg R_{\rm Ly \alpha},\,\mu_{\rm s} \neq 0$"
 )
 ax2.set_ylim([1e-6, 1e-2])
 # plot the deviation from the reference in the bottom panel
