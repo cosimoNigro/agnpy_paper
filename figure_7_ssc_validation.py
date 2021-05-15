@@ -104,7 +104,11 @@ ax1.set_ylim([1e-14, 1e-9])
 # ssc SEDs
 ax2.loglog(nu_ssc_dermer, sed_ssc_agnpy_dermer, ls="-", color="crimson", label="agnpy")
 ax2.loglog(
-    nu_ssc_dermer, sed_ssc_dermer, ls="--", color="k", label="Fig. 7.4, Dermer \& Menon (2009)"
+    nu_ssc_dermer,
+    sed_ssc_dermer,
+    ls="--",
+    color="k",
+    label="Fig. 7.4, Dermer \& Menon (2009)",
 )
 ax2.loglog(nu_ssc_jetset, sed_ssc_jetset, ls="--", color="dodgerblue", label="jetset")
 ax2.legend(loc="best")

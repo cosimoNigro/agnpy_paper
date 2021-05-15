@@ -79,7 +79,8 @@ ax2.loglog(
 )
 ax2.legend(loc="best", fontsize=10)
 ax2.set_title(
-    "absorption on ring DT, " + r"$r=10^{22}\,{\rm cm} \gg R_{\rm DT},\,\mu_{\rm s} \neq 0$"
+    "absorption on ring DT, "
+    + r"$r=10^{22}\,{\rm cm} \gg R_{\rm DT},\,\mu_{\rm s} \neq 0$"
 )
 ax2.set_ylim([1e-5, 1e-1])
 # plot the deviation from the reference in the bottom panel
