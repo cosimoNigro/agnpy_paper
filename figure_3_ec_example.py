@@ -25,7 +25,14 @@ Gamma = 40
 blob = Blob(R_b, z, delta_D, Gamma, B, spectrum_norm, spectrum_dict)
 blob.set_gamma_size(500)
 # target
-dt = RingDustTorus(2e46 * u.Unit("erg s-1"), 0.2, 1000 * u.K)
+# disk parameters
+L_disk = 2e46 * u.Unit("erg s-1")
+xi_dt = 0.2
+T_dt = 1000 * u.K
+dt = RingDustTorus(L_disk, xi_dt, T_dt)
+# print blob and target
+print(blob)
+print(dt)
 # array of frequencies to compute the SEDs
 nu = np.logspace(15, 28, 100) * u.Hz
 
