@@ -96,15 +96,13 @@ ax3.axhline(-0.3, ls=":", color="darkgray")
 ax3.set_ylim([-0.5, 0.5])
 ax3.set_yticks([-0.4, -0.2, 0.0, 0.2, 0.4])
 ax3.semilogx(
-    nu_ref,
-    deviation_ref,
-    ls="--",
-    lw=1.5,
-    color="k",
-    label=r"$\tau_{\gamma\gamma, \rm agnpy}\,/\,\tau_{\gamma\gamma, \rm ref} - 1$",
+    nu_ref, deviation_ref, ls="--", lw=1.5, color="k", label="Fig. 14, Finke (2016)",
 )
 ax3.legend(loc="best", fontsize=10)
 ax3.set_xlabel(r"$\nu\,/\,{\rm Hz}$")
+ax3.set_ylabel(
+    r"$\frac{\tau_{\gamma\gamma, \rm agnpy}}{\tau_{\gamma\gamma, \rm ref}} - 1$"
+)
 # plot the deviation from the point like approximation in the bottom panel
 ax4.grid(False)
 ax4.axhline(0, ls="-", color="darkgray")
@@ -120,7 +118,7 @@ ax4.semilogx(
     ls="--",
     lw=1.5,
     color="k",
-    label=r"$\tau_{\gamma\gamma, \rm agnpy}\,/\,\tau_{\gamma\gamma, \rm ref} - 1$",
+    label="point-source approximation",
 )
 ax4.legend(loc="best", fontsize=10)
 ax4.set_xlabel(r"$\nu\,/\,{\rm Hz}$")

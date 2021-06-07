@@ -98,8 +98,7 @@ ax2.loglog(
     ls="--",
     lw=1.5,
     color="k",
-    label="agnpy, point-source approximation, "
-    + r"$\epsilon_0 = \epsilon_0(R_{\rm in})$",
+    label="agnpy, point-source approx., " + r"$\epsilon_0 = \epsilon_0(R_{\rm in})$",
 )
 ax2.loglog(
     nu_ref,
@@ -107,8 +106,7 @@ ax2.loglog(
     ls=":",
     lw=1.5,
     color="k",
-    label="agnpy, point-source approximation, "
-    + r"$\epsilon_0 = \epsilon_0(R_{\rm out})$",
+    label="agnpy, point-source approx., " + r"$\epsilon_0 = \epsilon_0(R_{\rm out})$",
 )
 # shade the area between the two SED of the point source approximations
 ax2.fill_between(nu_ref, sed_agnpy_disk_R_in, sed_agnpy_disk_R_out, color="silver")
@@ -127,15 +125,11 @@ ax3.axhline(-0.3, ls=":", color="darkgray")
 ax3.set_ylim([-0.5, 0.5])
 ax3.set_yticks([-0.4, -0.2, 0.0, 0.2, 0.4])
 ax3.semilogx(
-    nu_ref,
-    deviation_ref,
-    ls="--",
-    lw=1.5,
-    color="k",
-    label=r"$\nu F_{\nu, \rm agnpy}\,/\,\nu F_{\nu, \rm ref} - 1$",
+    nu_ref, deviation_ref, ls="--", lw=1.5, color="k", label="Fig. 8, Finke (2016)",
 )
 ax3.legend(loc="best", fontsize=10)
 ax3.set_xlabel(r"$\nu\,/\,{\rm Hz}$")
+ax3.set_ylabel(r"$\frac{\nu F_{\nu, \rm agnpy}}{\nu F_{\nu, \rm ref}} - 1$")
 # plot the deviation from the point like approximation in the bottom panel
 ax4.grid(False)
 ax4.axhline(0, ls="-", color="darkgray")
@@ -151,7 +145,7 @@ ax4.semilogx(
     ls="--",
     lw=1.5,
     color="k",
-    label=r"$\nu F_{\nu, \rm agnpy}\,/\,\nu F_{\nu, \rm approx} - 1$",
+    label="point-source approx., " + r"$\epsilon_0 = \epsilon_0(R_{\rm in})$",
 )
 ax4.semilogx(
     nu_ref,
@@ -159,7 +153,7 @@ ax4.semilogx(
     ls=":",
     lw=1.5,
     color="k",
-    label=r"$\nu F_{\nu, \rm agnpy}\,/\,\nu F_{\nu, \rm approx} - 1$",
+    label="point-source approx., " + r"$\epsilon_0 = \epsilon_0(R_{\rm out})$",
 )
 ax4.legend(loc="best", fontsize=10)
 ax4.set_xlabel(r"$\nu\,/\,{\rm Hz}$")

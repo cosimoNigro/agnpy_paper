@@ -129,17 +129,18 @@ ax3.semilogx(
     deviation_synch_dermer,
     ls="--",
     color="k",
-    label=r"$\nu F_{\nu, \rm agnpy}\,/\,\nu F_{\nu, \rm ref} - 1$",
+    label="Fig. 7.4, Dermer \& Menon (2009)",
 )
 ax3.semilogx(
     nu_synch_jetset,
     deviation_synch_jetset,
     ls="--",
     color="dodgerblue",
-    label=r"$\nu F_{\nu, \rm agnpy}\,/\,\nu F_{\nu, \rm jetset} - 1$",
+    label="jetset",
 )
 ax3.legend(loc="best", fontsize=10)
 ax3.set_xlabel(sed_x_label)
+ax3.set_ylabel(r"$\frac{\nu F_{\nu, \rm agnpy}}{\nu F_{\nu, \rm ref}} - 1$")
 # plot the deviation from the synchrotron reference in the bottom panel
 deviation_ssc_dermer = sed_ssc_agnpy_dermer / sed_ssc_dermer - 1
 deviation_ssc_jetset = sed_ssc_agnpy_jetset / sed_ssc_jetset - 1
@@ -157,14 +158,10 @@ ax4.semilogx(
     ls="--",
     lw=1.5,
     color="k",
-    label=r"$\nu F_{\nu, \rm agnpy}\,/\,\nu F_{\nu, \rm ref} - 1$",
+    label="Fig. 7.4, Dermer \& Menon (2009)",
 )
 ax4.semilogx(
-    nu_ssc_jetset,
-    deviation_ssc_jetset,
-    ls="--",
-    color="dodgerblue",
-    label=r"$\nu F_{\nu, \rm agnpy}\,/\,\nu F_{\nu, \rm jetset} - 1$",
+    nu_ssc_jetset, deviation_ssc_jetset, ls="--", color="dodgerblue", label="jetset",
 )
 ax4.legend(loc="best", fontsize=10)
 ax4.set_xlabel(sed_x_label)

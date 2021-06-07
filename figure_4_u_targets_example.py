@@ -58,7 +58,7 @@ ax.axhline(
     lw=2,
     ls="--",
     color="darkgray",
-    label="synchrotron",
+    label="magnetic field",
 )
 ax.legend(loc="best")
 ax.set_xlabel(r_label, fontsize=12)
