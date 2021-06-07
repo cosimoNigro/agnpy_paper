@@ -169,5 +169,5 @@ ax4.semilogx(
 ax4.legend(loc="best", fontsize=10)
 ax4.set_xlabel(sed_x_label)
 # save the figure
-fig.savefig(f"figures/figure_7.png")
-fig.savefig(f"figures/figure_7.pdf")
+fig.savefig(f"figures/figure_8.png")
+fig.savefig(f"figures/figure_8.pdf")

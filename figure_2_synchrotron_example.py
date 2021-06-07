@@ -18,5 +18,5 @@ plt.rcParams["text.usetex"] = True
 fig, ax = plt.subplots()
 plot_sed(nu, sed, ax=ax, color="k", lw=2, label="synchrotron")
 ax.legend(loc="best")
-fig.savefig("figures/figure_1.png")
-fig.savefig("figures/figure_1.pdf")
+fig.savefig("figures/figure_2.png")
+fig.savefig("figures/figure_2.pdf")

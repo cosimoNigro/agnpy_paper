@@ -452,5 +452,5 @@ ax.legend(
     loc="upper center", fontsize=10, ncol=2,
 )
 plt.show()
-fig.savefig("figures/figure_6.png")
-fig.savefig("figures/figure_6.pdf")
+fig.savefig("figures/figure_7.png")
+fig.savefig("figures/figure_7.pdf")
