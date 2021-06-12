@@ -42,6 +42,7 @@ u_cmb = cmb.u(blob)
 u_disk = disk.u(r, blob)
 u_blr = blr.u(r, blob)
 u_dt = dt.u(r, blob)
+u_syn = blob.u_ph_synch
 
 # plot
 load_mpl_rc()
@@ -49,16 +50,23 @@ plt.rcParams["text.usetex"] = True
 fig, ax = plt.subplots()
 u_label = r"$u'\,/\,({\rm erg}\,{\rm cm}^{-3})$"
 r_label = r"$r\,/\,{\rm cm}$"
-ax.axhline(u_cmb.to_value("erg cm-3"), lw=2, ls="--", color="k", label="CMB")
+ax.axhline(u_cmb.to_value("erg cm-3"), lw=2, color="k", label="CMB")
 ax.loglog(r, u_disk, lw=2, color="crimson", label="disk")
 ax.loglog(r, u_blr, lw=2, color="dodgerblue", label="broad line region")
 ax.loglog(r, u_dt, lw=2, color="goldenrod", label="dust torus")
 ax.axhline(
-    blob.u_ph_synch.to_value("erg cm-3"),
+    blob.U_B.to_value("erg cm-3"),
     lw=2,
     ls="--",
-    color="darkgray",
+    color="cadetblue",
     label="magnetic field",
+)
+ax.axhline(
+    blob.u_ph_synch.to_value("erg cm-3"),
+    lw=2,
+    ls=":",
+    color="cadetblue",
+    label="synchrotron",
 )
 ax.legend(loc="best")
 ax.set_xlabel(r_label, fontsize=12)
