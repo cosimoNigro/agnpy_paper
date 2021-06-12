@@ -30,6 +30,9 @@ blr_ly_alpha = SphericalShellBLR(
 blr_H_alpha = SphericalShellBLR(
     L_disk, (L_H_alpha / L_disk).to_value(""), "Halpha", R_H_alpha
 )
+# print the BLRs
+print(blr_ly_alpha)
+print(blr_H_alpha)
 # dust torus
 dt = RingDustTorus(L_disk, 0.2, 1000 * u.K)
 # distance from the central sources
