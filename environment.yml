@@ -1,8 +1,7 @@
-name: agnpy
+name: agnpy-paper
 
 channels:
   - conda-forge
-  - sherpa
 
 dependencies:
   - python
@@ -12,7 +11,7 @@ dependencies:
   - astropy
   - pyyaml # needed to read astropy ecsv file
   - matplotlib
-  - sherpa
+  - gammapy
   - pip:
     - agnpy
   
