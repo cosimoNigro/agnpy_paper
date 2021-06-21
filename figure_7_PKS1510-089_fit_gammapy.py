@@ -232,7 +232,7 @@ R_in = 6 * R_g
 R_out = 10000 * R_g
 # DT
 xi_dt = 0.6  # fraction of disk luminosity reprocessed by the DT
-R_dt = 6.5 * 1e18 * u.cm  # radius of DT
+R_dt = 6.47 * 1e18 * u.cm  # radius of DT
 T_dt = 1e3 * u.K
 # location of the emission region
 r = 7e17 * u.cm
@@ -308,11 +308,11 @@ t_start_2 = time.perf_counter()
 result_2 = fitter.run(optimize_opts={"print_level": 1})
 t_stop_2 = time.perf_counter()
 delta_t_2 = t_stop_2 - t_start_2
-logging.info(f"time elapsed first fit: {delta_t_2:.2f} s")
+logging.info(f"time elapsed second fit: {delta_t_2:.2f} s")
 print(result_2)
 print(agnpy_ec.parameters.to_table())
 
-logging.info("generating diagnostic plots for the fit")
+logging.info("computing covariance matrix and statistics profiles")
 fit_check_dir = "figures/figure_7_fit_check"
 Path(fit_check_dir).mkdir(parents=True, exist_ok=True)
 # best-fit model
@@ -327,15 +327,25 @@ plt.savefig(f"{fit_check_dir}/correlation_matrix.png")
 plt.close()
 # chi2 profiles
 total_stat = result_2.total_stat
-for par in dataset_ec.models.parameters:
-    if par.frozen is False:
-        profile = fitter.stat_profile(parameter=par)
-        plt.plot(profile[f"{par.name}_scan"], profile["stat_scan"] - total_stat)
-        plt.xlabel(f"{par.unit}")
-        plt.ylabel(r"$\chi^2$")
-        plt.title(f"{par.name}: {par.value} +- {par.error}")
-        plt.savefig(f"{fit_check_dir}/chi2_profile_parameter_{par.name}.png")
-        plt.close()
+for reoptimize in (False, True):
+    logging.info(f"computing statistics profile with reoptimization {reoptimize}")
+    for par in dataset_ec.models.parameters:
+        if par.frozen is False:
+            logging.info(f"computing statistics profile for {par.name}")
+            t_start_profile = time.perf_counter()
+            profile = fitter.stat_profile(parameter=par, reoptimize=reoptimize)
+            t_stop_profile = time.perf_counter()
+            delta_t_profile = t_stop_profile - t_start_profile
+            logging.info(f"time elapsed profile computation: {delta_t_profile:.2f} s")
+            plt.plot(profile[f"{par.name}_scan"], profile["stat_scan"] - total_stat)
+            plt.xlabel(f"{par.unit}")
+            plt.ylabel(r"$\chi^2$")
+            plt.title(f"{par.name}: {par.value:.3f} +- {par.error:.3f}")
+            reoptimized = str(reoptimize).lower()
+            plt.savefig(
+                f"{fit_check_dir}/chi2_profile_parameter_{par.name}_reoptimize_{reoptimized}.png"
+            )
+            plt.close()
 
 
 logging.info("plot the final model with the individual components")
@@ -445,5 +455,5 @@ ax.legend(
     loc="upper center", fontsize=10, ncol=2,
 )
 plt.show()
-fig.savefig("figures/figure_7.png")
-fig.savefig("figures/figure_7.pdf")
+fig.savefig("figures/figure_7_gammapy_fit.png")
+fig.savefig("figures/figure_7_gammapy_fit.pdf")

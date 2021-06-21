@@ -146,7 +146,6 @@ R_b = 5.2 * 1e16 * u.cm
 z = 0.0308
 d_L = Distance(z=z).to("cm")
 B = 3.8 * 1e-2 * u.G
-# instance of the model wrapping angpy functionalities
 # - AGN parameters
 agnpy_ssc.z.quantity = z
 agnpy_ssc.z.frozen = True
@@ -189,19 +188,19 @@ print(result_1)
 print(agnpy_ssc.parameters.to_table())
 
 logging.info("second fit iteration with EED and blob parameters thawed")
-agnpy_ssc.log10_R_b.frozen = False
+# agnpy_ssc.log10_R_b.frozen = False
 agnpy_ssc.delta_D.frozen = False
 agnpy_ssc.log10_B.frozen = False
 t_start_2 = time.perf_counter()
 result_2 = fitter.run(optimize_opts={"print_level": 1})
 t_stop_2 = time.perf_counter()
 delta_t_2 = t_stop_2 - t_start_2
-logging.info(f"time elapsed first fit: {delta_t_2:.2f} s")
+logging.info(f"time elapsed second fit: {delta_t_2:.2f} s")
 print(result_2)
 print(agnpy_ssc.parameters.to_table())
 
-logging.info("generating diagnostic plots for the fit")
-fit_check_dir = "figures/figure_6_fit_check"
+logging.info("computing covariance matrix and statistics profiles")
+fit_check_dir = "figures/figure_6_checks_gammapy_fit"
 Path(fit_check_dir).mkdir(parents=True, exist_ok=True)
 # best-fit model
 flux_points.plot(energy_unit="eV", energy_power=2)
@@ -214,15 +213,25 @@ plt.savefig(f"{fit_check_dir}/correlation_matrix.png")
 plt.close()
 # chi2 profiles
 total_stat = result_2.total_stat
-for par in dataset_ssc.models.parameters:
-    if par.frozen is False:
-        profile = fitter.stat_profile(parameter=par)
-        plt.plot(profile[f"{par.name}_scan"], profile["stat_scan"] - total_stat)
-        plt.xlabel(f"{par.unit}")
-        plt.ylabel(r"$\chi^2$")
-        plt.title(f"{par.name}: {par.value} +- {par.error}")
-        plt.savefig(f"{fit_check_dir}/chi2_profile_parameter_{par.name}.png")
-        plt.close()
+for reoptimize in (False, True):
+    logging.info(f"computing statistics profile with reoptimization {reoptimize}")
+    for par in dataset_ssc.models.parameters:
+        if par.frozen is False:
+            logging.info(f"computing statistics profile for {par.name}")
+            t_start_profile = time.perf_counter()
+            profile = fitter.stat_profile(parameter=par, reoptimize=reoptimize)
+            t_stop_profile = time.perf_counter()
+            delta_t_profile = t_stop_profile - t_start_profile
+            logging.info(f"time elapsed profile computation: {delta_t_profile:.2f} s")
+            plt.plot(profile[f"{par.name}_scan"], profile["stat_scan"] - total_stat)
+            plt.xlabel(f"{par.unit}")
+            plt.ylabel(r"$\chi^2$")
+            plt.title(f"{par.name}: {par.value:.3f} +- {par.error:.3f}")
+            reoptimized = str(reoptimize).lower()
+            plt.savefig(
+                f"{fit_check_dir}/chi2_profile_parameter_{par.name}_reoptimize_{reoptimized}.png"
+            )
+            plt.close()
 
 
 logging.info("plot the final model with the individual components")
@@ -291,5 +300,5 @@ ax.set_ylabel(sed_y_label)
 ax.set_xlim([1e-14, 1e-9])
 ax.set_ylim([1e-14, 1e-9])
 ax.legend(loc="best")
-fig.savefig("figures/figure_6.png")
-fig.savefig("figures/figure_6.pdf")
+fig.savefig("figures/figure_6_gammapy_fit.png")
+fig.savefig("figures/figure_6_gammapy_fit.pdf")
