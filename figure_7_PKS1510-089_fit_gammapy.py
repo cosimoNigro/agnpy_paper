@@ -313,7 +313,7 @@ print(result_2)
 print(agnpy_ec.parameters.to_table())
 
 logging.info("computing covariance matrix and statistics profiles")
-fit_check_dir = "figures/figure_7_fit_check"
+fit_check_dir = "figures/figure_7_checks_gammapy_fit"
 Path(fit_check_dir).mkdir(parents=True, exist_ok=True)
 # best-fit model
 flux_points.plot(energy_unit="eV", energy_power=2)
