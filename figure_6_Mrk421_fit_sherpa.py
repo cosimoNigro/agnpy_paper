@@ -59,7 +59,7 @@ class AgnpySSC(model.RegriddableModel1D):
         # emission region parameters
         self.delta_D = model.Parameter(name, "delta_D", 10, min=0, max=40)
         self.log10_B = model.Parameter(name, "log10_B", -2, min=-4, max=2)
-        self.log10_R_b = model.Parameter(name, "log10_R_b", 16, min=14, max=20)
+        self.t_var = model.Parameter(name, "t_var", 600, min=10, max=np.pi * 1e7)
 
         model.RegriddableModel1D.__init__(
             self,
@@ -75,7 +75,7 @@ class AgnpySSC(model.RegriddableModel1D):
                 self.d_L,
                 self.delta_D,
                 self.log10_B,
-                self.log10_R_b,
+                self.t_var,
             ),
         )
 
@@ -92,7 +92,7 @@ class AgnpySSC(model.RegriddableModel1D):
             d_L,
             delta_D,
             log10_B,
-            log10_R_b,
+            t_var,
         ) = pars
         # add units, scale quantities
         x *= u.Hz
@@ -102,8 +102,7 @@ class AgnpySSC(model.RegriddableModel1D):
         gamma_max = 10 ** log10_gamma_max
         B = 10 ** log10_B * u.G
         d_L *= u.cm
-        R_b = 10 ** log10_R_b * u.cm
-
+        R_b = c.to_value("cm s-1") * t_var * delta_D / (1 + z) * u.cm
         sed_synch = Synchrotron.evaluate_sed_flux(
             x,
             z,
@@ -146,12 +145,11 @@ y_err_stat = sed_table["nuFnu_err"]
 # array of systematic errors, will just be summed in quadrature to the statistical error
 # we assume
 # - 15% on gamma-ray instruments
-# - 5% on X-ray instruments
-# - 5% on UV instruments
+# - 10% on lower waveband instruments
 y_err_syst = np.zeros(len(x))
 gamma = x > (0.1 * u.GeV).to("Hz", equivalencies=u.spectral())
-y_err_syst[gamma] = 0.10
-y_err_syst[~gamma] = 0.05
+y_err_syst[gamma] = 0.15
+y_err_syst[~gamma] = 0.10
 y_err_syst = y * y_err_syst
 # remove the points with orders of magnitude smaller error, they are upper limits
 UL = y_err_stat < (y * 1e-3)
@@ -179,8 +177,8 @@ agnpy_ssc.delta_D = 18
 agnpy_ssc.delta_D.freeze()
 agnpy_ssc.log10_B = -1.3
 agnpy_ssc.log10_B.freeze()
-agnpy_ssc.log10_R_b = np.log10(5e16)
-agnpy_ssc.log10_R_b.freeze()
+agnpy_ssc.t_var = (1 * u.d).to_value("s")
+agnpy_ssc.t_var.freeze()
 # - EED
 agnpy_ssc.log10_k_e = -7.9
 agnpy_ssc.p1 = 2.02
@@ -192,6 +190,9 @@ agnpy_ssc.log10_gamma_max = np.log10(1e6)
 agnpy_ssc.log10_gamma_max.freeze()
 
 
+# directory to store the checks performed on the fit
+fit_check_dir = "figures/figure_6_checks_sherpa_fit"
+Path(fit_check_dir).mkdir(parents=True, exist_ok=True)
 # fit using the Levenberg-Marquardt optimiser
 fitter = Fit(sed, agnpy_ssc, stat=Chi2(), method=LevMar())
 # use confidence to estimate the errors
@@ -221,11 +222,17 @@ delta_t_2 = t_stop_2 - t_start_2
 logging.info(f"time elapsed second fit: {delta_t_2:.2f} s")
 print("fit succesful?", results_2.succeeded)
 print(results_2.format())
+# plot final model without components
+nu = np.logspace(10, 30, 300)
+plt.errorbar(sed.x, sed.y, yerr=sed.get_error(), marker=".", ls="")
+plt.loglog(nu, agnpy_ssc(nu))
+plt.xlabel(sed_x_label)
+plt.ylabel(sed_y_label)
+plt.savefig(f"{fit_check_dir}/best_fit.png")
+plt.close()
 
 logging.info(f"computing statistics profiles")
 final_stat = fitter.calc_stat()
-fit_check_dir = "figures/figure_6_checks_sherpa_fit"
-Path(fit_check_dir).mkdir(parents=True, exist_ok=True)
 for par in agnpy_ssc.pars:
     if par.frozen == False:
         logging.info(f"computing statistics profile for {par.name}")
@@ -242,7 +249,6 @@ for par in agnpy_ssc.pars:
         plt.savefig(f"{fit_check_dir}/chi2_profile_parameter_{par.name}.png")
         plt.close()
 
-"""
 logging.info(f"estimating errors with confidence intervals")
 t_start_error = time.perf_counter()
 errors_2 = fitter.est_errors()
@@ -250,7 +256,6 @@ t_stop_error = time.perf_counter()
 delta_t_error = t_stop_error - t_start_error
 logging.info(f"time elapsed error computation: {delta_t_error:.2f} s")
 print(errors_2.format())
-"""
 
 logging.info("plot the final model with the individual components")
 k_e = 10 ** agnpy_ssc.log10_k_e.val * u.Unit("cm-3")
@@ -260,8 +265,8 @@ gamma_b = 10 ** agnpy_ssc.log10_gamma_b.val
 gamma_min = 10 ** agnpy_ssc.log10_gamma_min.val
 gamma_max = 10 ** agnpy_ssc.log10_gamma_max.val
 B = 10 ** agnpy_ssc.log10_B.val * u.G
-R_b = 10 ** agnpy_ssc.log10_R_b * u.cm
 delta_D = agnpy_ssc.delta_D.val
+R_b = c.to_value("cm s-1") * agnpy_ssc.t_var.val * delta_D / (1 + z) * u.cm
 parameters = {
     "p1": p1,
     "p2": p2,
@@ -273,6 +278,9 @@ spectrum_dict = {"type": "BrokenPowerLaw", "parameters": parameters}
 blob = Blob(
     R_b, z, delta_D, delta_D, B, k_e, spectrum_dict, spectrum_norm_type="differential"
 )
+print(blob)
+print("jet power in particles", blob.P_jet_e)
+print("jet power in B", blob.P_jet_B)
 
 # compute the obtained emission region
 synch = Synchrotron(blob)

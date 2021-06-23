@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 import astropy.units as u
 from astropy.table import Table
+from astropy.constants import c
 from astropy.coordinates import Distance
 import matplotlib.pyplot as plt
 
@@ -58,7 +59,7 @@ class AgnpySSC(SpectralModel):
     # emission region parameters
     delta_D = Parameter("delta_D", 10, min=0, max=40)
     log10_B = Parameter("log10_B", -1, min=-4, max=2)
-    log10_R_b = Parameter("log10_R_b", 16, min=14, max=20)
+    t_var = Parameter("t_var", "600 s", min=10, max=np.pi * 1e7)
 
     @staticmethod
     def evaluate(
@@ -73,15 +74,15 @@ class AgnpySSC(SpectralModel):
         d_L,
         delta_D,
         log10_B,
-        log10_R_b,
+        t_var,
     ):
         # conversions
         k_e = 10 ** log10_k_e * u.Unit("cm-3")
         gamma_b = 10 ** log10_gamma_b
         gamma_min = 10 ** log10_gamma_min
         gamma_max = 10 ** log10_gamma_max
-        R_b = 10 ** log10_R_b * u.cm
         B = 10 ** log10_B * u.G
+        R_b = (c * t_var * delta_D / (1 + z)).to("cm")
 
         nu = energy.to("Hz", equivalencies=u.spectral())
         sed_synch = Synchrotron.evaluate_sed_flux(
@@ -130,12 +131,11 @@ y_err_stat = sed_table["nuFnu_err"].to("erg cm-2 s-1")
 # array of systematic errors, will just be summed in quadrature to the statistical error
 # we assume
 # - 15% on gamma-ray instruments
-# - 5% on X-ray instruments
-# - 5% on UV instruments
+# - 10% on lower waveband instruments
 y_err_syst = np.zeros(len(x))
 gamma = x > 0.1 * u.GeV
-y_err_syst[gamma] = 0.10
-y_err_syst[~gamma] = 0.05
+y_err_syst[gamma] = 0.15
+y_err_syst[~gamma] = 0.10
 y_err_syst = y * y_err_syst
 # remove the points with orders of magnitude smaller error, they are upper limits
 UL = y_err_stat < (y * 1e-3)
@@ -167,8 +167,8 @@ agnpy_ssc.delta_D.quantity = 18
 agnpy_ssc.delta_D.frozen = True
 agnpy_ssc.log10_B.quantity = -1.3
 agnpy_ssc.log10_B.frozen = True
-agnpy_ssc.log10_R_b.quantity = np.log10(5e16)
-agnpy_ssc.log10_R_b.frozen = True
+agnpy_ssc.t_var.quantity = 1 * u.d
+agnpy_ssc.t_var.frozen = True
 # - EED
 agnpy_ssc.log10_k_e.quantity = -7.9
 agnpy_ssc.p1.quantity = 2.02
@@ -212,8 +212,11 @@ agnpy_ssc.covariance.plot_correlation()
 plt.savefig(f"{fit_check_dir}/correlation_matrix_first_iteration.png")
 plt.close()
 
+import IPython
+
+IPython.embed()
+
 logging.info("second fit iteration with EED and blob parameters thawed")
-agnpy_ssc.log10_R_b.frozen = False
 agnpy_ssc.delta_D.frozen = False
 agnpy_ssc.log10_B.frozen = False
 t_start_2 = time.perf_counter()
@@ -235,28 +238,34 @@ plt.close()
 logging.info("computing statistics profiles")
 # chi2 profiles
 total_stat = result_2.total_stat
-for reoptimize in (False, True):
-    logging.info(f"computing statistics profile with reoptimization {reoptimize}")
-    for par in dataset_ssc.models.parameters:
-        if par.frozen is False:
-            logging.info(f"computing statistics profile for {par.name}")
-            t_start_profile = time.perf_counter()
-            # set a decent range for profiling from -10% to 10% of the minimum value
-            profile = fitter.stat_profile(parameter=par, reoptimize=reoptimize)
-            t_stop_profile = time.perf_counter()
-            delta_t_profile = t_stop_profile - t_start_profile
-            logging.info(f"time elapsed profile computation: {delta_t_profile:.2f} s")
-            plt.plot(profile[f"{par.name}_scan"], profile["stat_scan"] - total_stat)
-            plt.xlabel(f"{par.unit}")
-            plt.ylabel(r"$\Delta\chi^2$")
-            plt.axhline(1, ls="--", color="orange")
-            plt.title(f"{par.name}: {par.value:.3f} +- {par.error:.3f}")
-            reoptimized = str(reoptimize).lower()
-            plt.savefig(
-                f"{fit_check_dir}/chi2_profile_parameter_{par.name}_reoptimize_{reoptimized}.png"
-            )
-            plt.close()
+logging.info(f"computing statistics profile")
+for par in agnpy_ssc.parameters:
+    if par.frozen is False:
+        logging.info(f"computing statistics profile for {par.name}")
+        t_start_profile = time.perf_counter()
+        profile = fitter.stat_profile(parameter=par, reoptimize=True)
+        t_stop_profile = time.perf_counter()
+        delta_t_profile = t_stop_profile - t_start_profile
+        logging.info(f"time elapsed profile computation: {delta_t_profile:.2f} s")
+        # plot profile
+        plt.plot(profile[f"{par.name}_scan"], profile["stat_scan"] - total_stat)
+        plt.xlabel(f"{par.unit}")
+        plt.ylabel(r"$\Delta\chi^2$")
+        plt.axhline(1, ls="--", color="orange")
+        plt.title(f"{par.name}: {par.value:.3f} +- {par.error:.3f}")
+        plt.savefig(f"{fit_check_dir}/chi2_profile_parameter_{par.name}.png")
+        plt.close()
 
+logging.info(f"computing confidence intervals")
+for par in agnpy_ssc.parameters:
+    if par.frozen is False:
+        logging.info(f"computing confidence interval for {par.name}")
+        t_start_confidence = time.perf_counter()
+        confidence = fitter.confidence(parameter=par, reoptimize=True)
+        t_stop_confidence = time.perf_counter()
+        delta_t_confidence = t_stop_confidence - t_start_confidence
+        logging.info(f"time elapsed confidence computation: {delta_t_confidence:.2f} s")
+        print(confidence)
 
 logging.info("plot the final model with the individual components")
 k_e = 10 ** agnpy_ssc.log10_k_e.value * u.Unit("cm-3")
@@ -266,7 +275,12 @@ gamma_b = 10 ** agnpy_ssc.log10_gamma_b.value
 gamma_min = 10 ** agnpy_ssc.log10_gamma_min.value
 gamma_max = 10 ** agnpy_ssc.log10_gamma_max.value
 B = 10 ** agnpy_ssc.log10_B.value * u.G
-R_b = 10 ** agnpy_ssc.log10_R_b.value * u.cm
+R_b = (
+    c
+    * agnpy_ssc.t_var.quantity
+    * agnpy_ssc.delta_D.quantity
+    / (1 + agnpy_ssc.z.quantity)
+).to("cm")
 delta_D = agnpy_ssc.delta_D.value
 parameters = {
     "p1": p1,
@@ -279,6 +293,9 @@ spectrum_dict = {"type": "BrokenPowerLaw", "parameters": parameters}
 blob = Blob(
     R_b, z, delta_D, delta_D, B, k_e, spectrum_dict, spectrum_norm_type="differential"
 )
+print(blob)
+print("jet power in particles", blob.P_jet_e)
+print("jet power in B", blob.P_jet_B)
 
 # compute the obtained emission region
 synch = Synchrotron(blob)
