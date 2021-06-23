@@ -200,12 +200,22 @@ sed_path = pkg_resources.resource_filename(
 sed_table = Table.read(sed_path)
 x = sed_table["E"].to("eV")
 y = sed_table["nuFnu"].to("erg cm-2 s-1")
-y_err = sed_table["nuFnu_err_lo"].to("erg cm-2 s-1")
+y_err_stat = sed_table["nuFnu_err_lo"].to("erg cm-2 s-1")
+# array of systematic errors, will just be summed in quadrature to the statistical error
+# we assume
+# - 15% on gamma-ray instruments
+# - 5% on X-ray instruments
+# - 5% on UV instruments
+y_err_syst = np.zeros(len(x))
+gamma = x > 0.1 * u.GeV
+y_err_syst[gamma] = 0.10
+y_err_syst[~gamma] = 0.05
+y_err_syst = y * y_err_syst
 # store in a Table readable by gammapy's FluxPoints
 flux_points_table = Table()
 flux_points_table["e_ref"] = x
 flux_points_table["e2dnde"] = y
-flux_points_table["e2dnde_err"] = y_err
+flux_points_table["e2dnde_err"] = np.sqrt(y_err_stat ** 2 + y_err_syst ** 2)
 flux_points_table.meta["SED_TYPE"] = "e2dnde"
 flux_points = FluxPoints(flux_points_table)
 flux_points = flux_points.to_sed_type("dnde")
@@ -288,11 +298,17 @@ dataset_ec = FluxPointsDataset(model, flux_points)
 # do not use frequency point below 1e11 Hz, affected by non-blazar emission
 E_min_fit = (1e11 * u.Hz).to("eV", equivalencies=u.spectral())
 dataset_ec.mask_fit = dataset_ec.data.energy_ref > E_min_fit
-logging.info(f"flux points dataset shape: {dataset_ec.data_shape()}")
+# plot initial model
+dataset_ec.plot_spectrum(energy_power=2, energy_unit="eV")
+plt.show()
 
-# fit
-logging.info("first fit iteration with only EED parameters thawed")
+
+# directory to store the checks performed on the fit
+fit_check_dir = "figures/figure_6_checks_gammapy_fit"
+Path(fit_check_dir).mkdir(parents=True, exist_ok=True)
+# define the fitter
 fitter = Fit([dataset_ec])
+logging.info("first fit iteration with only EED parameters thawed")
 t_start_1 = time.perf_counter()
 result_1 = fitter.run(optimize_opts={"print_level": 1})
 t_stop_1 = time.perf_counter()
@@ -300,6 +316,15 @@ delta_t_1 = t_stop_1 - t_start_1
 logging.info(f"time elapsed first fit: {delta_t_1:.2f} s")
 print(result_1)
 print(agnpy_ec.parameters.to_table())
+# plot best-fit model and covariance
+flux_points.plot(energy_unit="eV", energy_power=2)
+agnpy_ec.plot(energy_range=[1e-6, 1e15] * u.eV, energy_unit="eV", energy_power=2)
+plt.ylim([10 ** (-13.5), 10 ** (-7.5)])
+plt.savefig(f"{fit_check_dir}/best_fit_first_iteration.png")
+plt.close()
+agnpy_ec.covariance.plot_correlation()
+plt.savefig(f"{fit_check_dir}/correlation_matrix_first_iteration.png")
+plt.close()
 
 logging.info("second fit iteration with EED and blob parameters thawed")
 agnpy_ec.log10_r.frozen = False
@@ -311,20 +336,17 @@ delta_t_2 = t_stop_2 - t_start_2
 logging.info(f"time elapsed second fit: {delta_t_2:.2f} s")
 print(result_2)
 print(agnpy_ec.parameters.to_table())
-
-logging.info("computing covariance matrix and statistics profiles")
-fit_check_dir = "figures/figure_7_checks_gammapy_fit"
-Path(fit_check_dir).mkdir(parents=True, exist_ok=True)
-# best-fit model
+# plot best-fit model and covariance
 flux_points.plot(energy_unit="eV", energy_power=2)
 agnpy_ec.plot(energy_range=[1e-6, 1e15] * u.eV, energy_unit="eV", energy_power=2)
 plt.ylim([10 ** (-13.5), 10 ** (-7.5)])
-plt.savefig(f"{fit_check_dir}/best_fit.png")
+plt.savefig(f"{fit_check_dir}/best_fit_second_iteration.png")
 plt.close()
-# print and plot covariance
 agnpy_ec.covariance.plot_correlation()
-plt.savefig(f"{fit_check_dir}/correlation_matrix.png")
+plt.savefig(f"{fit_check_dir}/correlation_matrix_second_iteration.png")
 plt.close()
+
+logging.info("computing statistics profiles")
 # chi2 profiles
 total_stat = result_2.total_stat
 for reoptimize in (False, True):
@@ -333,20 +355,21 @@ for reoptimize in (False, True):
         if par.frozen is False:
             logging.info(f"computing statistics profile for {par.name}")
             t_start_profile = time.perf_counter()
+            # set a decent range for profiling from -10% to 10% of the minimum value
             profile = fitter.stat_profile(parameter=par, reoptimize=reoptimize)
             t_stop_profile = time.perf_counter()
             delta_t_profile = t_stop_profile - t_start_profile
             logging.info(f"time elapsed profile computation: {delta_t_profile:.2f} s")
             plt.plot(profile[f"{par.name}_scan"], profile["stat_scan"] - total_stat)
             plt.xlabel(f"{par.unit}")
-            plt.ylabel(r"$\chi^2$")
+            plt.ylabel(r"$\Delta\chi^2$")
+            plt.axhline(1, ls="--", color="orange")
             plt.title(f"{par.name}: {par.value:.3f} +- {par.error:.3f}")
             reoptimized = str(reoptimize).lower()
             plt.savefig(
                 f"{fit_check_dir}/chi2_profile_parameter_{par.name}_reoptimize_{reoptimized}.png"
             )
             plt.close()
-
 
 logging.info("plot the final model with the individual components")
 # plot the best fit model with the individual components

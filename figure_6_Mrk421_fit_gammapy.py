@@ -46,19 +46,19 @@ class AgnpySSC(SpectralModel):
     """
 
     tag = "SSC"
-    log10_k_e = Parameter("log10_k_e", -5, min=-20, max=2)
-    p1 = Parameter("p1", 2.1, min=1.0, max=5.0)
-    p2 = Parameter("p2", 3.1, min=1.0, max=5.0)
+    log10_k_e = Parameter("log10_k_e", -5, min=-20, max=10)
+    p1 = Parameter("p1", 2.1, min=-2.0, max=5.0)
+    p2 = Parameter("p2", 3.1, min=-2.0, max=5.0)
     log10_gamma_b = Parameter("log10_gamma_b", 3, min=1, max=6)
     log10_gamma_min = Parameter("log10_gamma_min", 1, min=0, max=4)
-    log10_gamma_max = Parameter("log10_gamma_max", 5, min=3, max=8)
+    log10_gamma_max = Parameter("log10_gamma_max", 5, min=4, max=8)
     # source general parameters
     z = Parameter("z", 0.1, min=0.01, max=1)
     d_L = Parameter("d_L", "1e27 cm", min=1e25, max=1e33)
     # emission region parameters
     delta_D = Parameter("delta_D", 10, min=0, max=40)
     log10_B = Parameter("log10_B", -1, min=-4, max=2)
-    log10_R_b = Parameter("log10_R_b", 16, min=14, max=18)
+    log10_R_b = Parameter("log10_R_b", 16, min=14, max=20)
 
     @staticmethod
     def evaluate(
@@ -75,13 +75,13 @@ class AgnpySSC(SpectralModel):
         log10_B,
         log10_R_b,
     ):
-        # conversion
+        # conversions
         k_e = 10 ** log10_k_e * u.Unit("cm-3")
         gamma_b = 10 ** log10_gamma_b
         gamma_min = 10 ** log10_gamma_min
         gamma_max = 10 ** log10_gamma_max
-        B = 10 ** log10_B * u.G
         R_b = 10 ** log10_R_b * u.cm
+        B = 10 ** log10_B * u.G
 
         nu = energy.to("Hz", equivalencies=u.spectral())
         sed_synch = Synchrotron.evaluate_sed_flux(
@@ -126,14 +126,28 @@ sed_path = pkg_resources.resource_filename("agnpy", "data/mwl_seds/Mrk421_2011.e
 sed_table = Table.read(sed_path)
 x = sed_table["nu"].to("eV", equivalencies=u.spectral())
 y = sed_table["nuFnu"].to("erg cm-2 s-1")
-y_err = sed_table["nuFnu_err"].to("erg cm-2 s-1")
+y_err_stat = sed_table["nuFnu_err"].to("erg cm-2 s-1")
+# array of systematic errors, will just be summed in quadrature to the statistical error
+# we assume
+# - 15% on gamma-ray instruments
+# - 5% on X-ray instruments
+# - 5% on UV instruments
+y_err_syst = np.zeros(len(x))
+gamma = x > 0.1 * u.GeV
+y_err_syst[gamma] = 0.10
+y_err_syst[~gamma] = 0.05
+y_err_syst = y * y_err_syst
 # remove the points with orders of magnitude smaller error, they are upper limits
-UL = y_err < (y * 1e-3)
+UL = y_err_stat < (y * 1e-3)
+x = x[~UL]
+y = y[~UL]
+y_err_stat = y_err_stat[~UL]
+y_err_syst = y_err_syst[~UL]
 # store in a Table readable by gammapy's FluxPoints
 flux_points_table = Table()
-flux_points_table["e_ref"] = x[~UL]
-flux_points_table["e2dnde"] = y[~UL]
-flux_points_table["e2dnde_err"] = y_err[~UL]
+flux_points_table["e_ref"] = x
+flux_points_table["e2dnde"] = y
+flux_points_table["e2dnde_err"] = np.sqrt(y_err_stat ** 2 + y_err_syst ** 2)
 flux_points_table.meta["SED_TYPE"] = "e2dnde"
 flux_points = FluxPoints(flux_points_table)
 flux_points = flux_points.to_sed_type("dnde")
@@ -141,28 +155,25 @@ flux_points = flux_points.to_sed_type("dnde")
 # declare a model
 agnpy_ssc = AgnpySSC()
 # initialise parameters
-# parameters from Table 4 and Figure 11 of Abdo (2011)
-R_b = 5.2 * 1e16 * u.cm
 z = 0.0308
 d_L = Distance(z=z).to("cm")
-B = 3.8 * 1e-2 * u.G
 # - AGN parameters
 agnpy_ssc.z.quantity = z
 agnpy_ssc.z.frozen = True
 agnpy_ssc.d_L.quantity = d_L
 agnpy_ssc.d_L.frozen = True
 # - blob parameters
-agnpy_ssc.log10_R_b.quantity = np.log10(R_b.to_value("cm"))
-agnpy_ssc.log10_R_b.frozen = True
-agnpy_ssc.delta_D.quantity = 20
+agnpy_ssc.delta_D.quantity = 18
 agnpy_ssc.delta_D.frozen = True
-agnpy_ssc.log10_B.quantity = np.log10(B.to_value("G"))
+agnpy_ssc.log10_B.quantity = -1.3
 agnpy_ssc.log10_B.frozen = True
+agnpy_ssc.log10_R_b.quantity = np.log10(5e16)
+agnpy_ssc.log10_R_b.frozen = True
 # - EED
-agnpy_ssc.log10_k_e.quantity = -5.5
-agnpy_ssc.log10_gamma_b.quantity = np.log10(1e4)
-agnpy_ssc.p1.quantity = 1.8
-agnpy_ssc.p2.quantity = 2.9
+agnpy_ssc.log10_k_e.quantity = -7.9
+agnpy_ssc.p1.quantity = 2.02
+agnpy_ssc.p2.quantity = 3.43
+agnpy_ssc.log10_gamma_b.quantity = 5
 agnpy_ssc.log10_gamma_min.quantity = np.log10(500)
 agnpy_ssc.log10_gamma_min.frozen = True
 agnpy_ssc.log10_gamma_max.quantity = np.log10(1e6)
@@ -174,11 +185,17 @@ dataset_ssc = FluxPointsDataset(model, flux_points)
 # do not use frequency point below 1e11 Hz, affected by non-blazar emission
 E_min_fit = (1e11 * u.Hz).to("eV", equivalencies=u.spectral())
 dataset_ssc.mask_fit = dataset_ssc.data.energy_ref > E_min_fit
-logging.info(f"flux points dataset shape: {dataset_ssc.data_shape()}")
+# plot initial model
+dataset_ssc.plot_spectrum(energy_power=2, energy_unit="eV")
+plt.show()
 
-# fit
-logging.info("first fit iteration with only EED parameters thawed")
+
+# directory to store the checks performed on the fit
+fit_check_dir = "figures/figure_6_checks_gammapy_fit"
+Path(fit_check_dir).mkdir(parents=True, exist_ok=True)
+# define the fitter
 fitter = Fit([dataset_ssc])
+logging.info("first fit iteration with only EED parameters thawed")
 t_start_1 = time.perf_counter()
 result_1 = fitter.run(optimize_opts={"print_level": 1})
 t_stop_1 = time.perf_counter()
@@ -186,9 +203,17 @@ delta_t_1 = t_stop_1 - t_start_1
 logging.info(f"time elapsed first fit: {delta_t_1:.2f} s")
 print(result_1)
 print(agnpy_ssc.parameters.to_table())
+# plot best-fit model and covariance
+flux_points.plot(energy_unit="eV", energy_power=2)
+agnpy_ssc.plot(energy_range=[1e-6, 1e15] * u.eV, energy_unit="eV", energy_power=2)
+plt.savefig(f"{fit_check_dir}/best_fit_first_iteration.png")
+plt.close()
+agnpy_ssc.covariance.plot_correlation()
+plt.savefig(f"{fit_check_dir}/correlation_matrix_first_iteration.png")
+plt.close()
 
 logging.info("second fit iteration with EED and blob parameters thawed")
-# agnpy_ssc.log10_R_b.frozen = False
+agnpy_ssc.log10_R_b.frozen = False
 agnpy_ssc.delta_D.frozen = False
 agnpy_ssc.log10_B.frozen = False
 t_start_2 = time.perf_counter()
@@ -198,19 +223,16 @@ delta_t_2 = t_stop_2 - t_start_2
 logging.info(f"time elapsed second fit: {delta_t_2:.2f} s")
 print(result_2)
 print(agnpy_ssc.parameters.to_table())
-
-logging.info("computing covariance matrix and statistics profiles")
-fit_check_dir = "figures/figure_6_checks_gammapy_fit"
-Path(fit_check_dir).mkdir(parents=True, exist_ok=True)
-# best-fit model
+# plot best-fit model and covariance
 flux_points.plot(energy_unit="eV", energy_power=2)
 agnpy_ssc.plot(energy_range=[1e-6, 1e15] * u.eV, energy_unit="eV", energy_power=2)
-plt.savefig(f"{fit_check_dir}/best_fit.png")
+plt.savefig(f"{fit_check_dir}/best_fit_second_iteration.png")
 plt.close()
-# print and plot covariance
 agnpy_ssc.covariance.plot_correlation()
-plt.savefig(f"{fit_check_dir}/correlation_matrix.png")
+plt.savefig(f"{fit_check_dir}/correlation_matrix_second_iteration.png")
 plt.close()
+
+logging.info("computing statistics profiles")
 # chi2 profiles
 total_stat = result_2.total_stat
 for reoptimize in (False, True):
@@ -219,13 +241,15 @@ for reoptimize in (False, True):
         if par.frozen is False:
             logging.info(f"computing statistics profile for {par.name}")
             t_start_profile = time.perf_counter()
+            # set a decent range for profiling from -10% to 10% of the minimum value
             profile = fitter.stat_profile(parameter=par, reoptimize=reoptimize)
             t_stop_profile = time.perf_counter()
             delta_t_profile = t_stop_profile - t_start_profile
             logging.info(f"time elapsed profile computation: {delta_t_profile:.2f} s")
             plt.plot(profile[f"{par.name}_scan"], profile["stat_scan"] - total_stat)
             plt.xlabel(f"{par.unit}")
-            plt.ylabel(r"$\chi^2$")
+            plt.ylabel(r"$\Delta\chi^2$")
+            plt.axhline(1, ls="--", color="orange")
             plt.title(f"{par.name}: {par.value:.3f} +- {par.error:.3f}")
             reoptimized = str(reoptimize).lower()
             plt.savefig(
