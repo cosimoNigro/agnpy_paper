@@ -1,0 +1,17 @@
+name: agnpy-paper
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python
+  - pip
+  - numpy
+  - scipy
+  - astropy
+  - pyyaml # needed to read astropy ecsv file
+  - matplotlib
+  - gammapy
+  - pip:
+    - agnpy
+  
