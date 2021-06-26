@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 from agnpy.targets import RingDustTorus, PointSourceBehindJet
 from agnpy.absorption import Absorption
 from agnpy.utils.plot import load_mpl_rc
-
+from pathlib import Path
+from utils import time_function_call
 
 z = 0.859  # redshift of the source
 L_disk = 2 * 1e46 * u.Unit("erg s-1")
@@ -38,9 +39,9 @@ tau_ref = 2 * data_ref[:, 1]  # correction to Finke's mistake in energy density 
 nu = np.logspace(25, 31) * u.Hz
 
 # recompute agnpy absorption on the same frequency points of the reference
-tau_dt_near = abs_dt_near.tau(nu_ref)
-tau_dt_far_mis = abs_dt_far_mis.tau(nu)
-tau_ps_dt_far_mis = abs_ps_dt_far_mis.tau(nu)
+tau_dt_near = time_function_call(abs_dt_near.tau, nu_ref)
+tau_dt_far_mis = time_function_call(abs_dt_far_mis.tau, nu)
+tau_ps_dt_far_mis = time_function_call(abs_ps_dt_far_mis.tau, nu)
 
 
 # figure
@@ -121,6 +122,6 @@ ax4.semilogx(
 )
 ax4.legend(loc="best", fontsize=10)
 ax4.set_xlabel(r"$\nu\,/\,{\rm Hz}$")
-# save the figure
+Path("figures").mkdir(exist_ok=True)
 fig.savefig(f"figures/figure_13.png")
 fig.savefig(f"figures/figure_13.pdf")

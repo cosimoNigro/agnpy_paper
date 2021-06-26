@@ -1,5 +1,4 @@
 # general modules
-import time
 import logging
 import pkg_resources
 from pathlib import Path
@@ -9,6 +8,7 @@ from astropy.constants import c
 from astropy.table import Table
 from astropy.coordinates import Distance
 import matplotlib.pyplot as plt
+from utils import time_function_call
 
 # import agnpy classes
 from agnpy.emission_regions import Blob
@@ -25,13 +25,6 @@ from sherpa.stats import Chi2
 from sherpa.optmethods import LevMar
 from sherpa.estmethods import Confidence
 from sherpa.plot import IntervalProjection
-
-
-logging.basicConfig(
-    format="%(levelname)s:%(asctime)s %(message)s",
-    datefmt="%m/%d/%Y %I:%M:%S %p",
-    level=logging.INFO,
-)
 
 
 class AgnpySSC(model.RegriddableModel1D):
@@ -204,22 +197,14 @@ max_x = 1e30 * u.Hz
 sed.notice(min_x, max_x)
 
 logging.info("first fit iteration with only EED parameters thawed")
-t_start_1 = time.perf_counter()
-results_1 = fitter.fit()
-t_stop_1 = time.perf_counter()
-delta_t_1 = t_stop_1 - t_start_1
-logging.info(f"time elapsed first fit: {delta_t_1:.2f} s")
+results_1 = time_function_call(fitter.fit)
 print("fit succesful?", results_1.succeeded)
 print(results_1.format())
 
 logging.info("second fit iteration with EED and blob parameters thawed")
 agnpy_ssc.delta_D.thaw()
 agnpy_ssc.log10_B.thaw()
-t_start_2 = time.perf_counter()
-results_2 = fitter.fit()
-t_stop_2 = time.perf_counter()
-delta_t_2 = t_stop_2 - t_start_2
-logging.info(f"time elapsed second fit: {delta_t_2:.2f} s")
+results_2 = time_function_call(fitter.fit)
 print("fit succesful?", results_2.succeeded)
 print(results_2.format())
 # plot final model without components
@@ -237,11 +222,7 @@ for par in agnpy_ssc.pars:
     if par.frozen == False:
         logging.info(f"computing statistics profile for {par.name}")
         proj = IntervalProjection()
-        t_start_profile = time.perf_counter()
-        proj.calc(fitter, par)
-        t_stop_profile = time.perf_counter()
-        delta_t_profile = t_stop_profile - t_start_profile
-        logging.info(f"time elapsed profile computation: {delta_t_profile:.2f} s")
+        time_function_call(proj.calc, fitter, par)
         plt.plot(proj.x, proj.y - final_stat)
         plt.axhline(1, ls="--", color="orange")
         plt.xlabel(par.name)
@@ -250,11 +231,7 @@ for par in agnpy_ssc.pars:
         plt.close()
 
 logging.info(f"estimating errors with confidence intervals")
-t_start_error = time.perf_counter()
-errors_2 = fitter.est_errors()
-t_stop_error = time.perf_counter()
-delta_t_error = t_stop_error - t_start_error
-logging.info(f"time elapsed error computation: {delta_t_error:.2f} s")
+errors_2 = time_function_call(fitter.est_errors())
 print(errors_2.format())
 
 logging.info("plot the final model with the individual components")
@@ -278,7 +255,6 @@ spectrum_dict = {"type": "BrokenPowerLaw", "parameters": parameters}
 blob = Blob(
     R_b, z, delta_D, delta_D, B, k_e, spectrum_dict, spectrum_norm_type="differential"
 )
-print(blob)
 print("jet power in particles", blob.P_jet_e)
 print("jet power in B", blob.P_jet_B)
 

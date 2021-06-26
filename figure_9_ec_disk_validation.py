@@ -8,7 +8,8 @@ from agnpy.emission_regions import Blob
 from agnpy.targets import PointSourceBehindJet, SSDisk
 from agnpy.compton import ExternalCompton
 from agnpy.utils.plot import load_mpl_rc
-
+from pathlib import Path
+from utils import time_function_call
 
 # blob
 spectrum_norm = 6e42 * u.erg
@@ -59,10 +60,10 @@ nu_ref = data_ref[:, 0] * u.Hz
 sed_ref = data_ref[:, 1] * u.Unit("erg cm-2 s-1")
 
 # recompute agnpy SEDs on the same frequency points of the reference
-sed_agnpy_disk_near = ec_disk_near.sed_flux(nu_ref)
-sed_agnpy_disk_far = ec_disk_far.sed_flux(nu_ref)
-sed_agnpy_disk_R_in = ec_disk_ps_R_in.sed_flux(nu_ref)
-sed_agnpy_disk_R_out = ec_disk_ps_R_out.sed_flux(nu_ref)
+sed_agnpy_disk_near = time_function_call(ec_disk_near.sed_flux, nu_ref)
+sed_agnpy_disk_far = time_function_call(ec_disk_far.sed_flux, nu_ref)
+sed_agnpy_disk_R_in = time_function_call(ec_disk_ps_R_in.sed_flux, nu_ref)
+sed_agnpy_disk_R_out = time_function_call(ec_disk_ps_R_out.sed_flux, nu_ref)
 
 
 # figure
@@ -157,6 +158,6 @@ ax4.semilogx(
 )
 ax4.legend(loc="best", fontsize=10)
 ax4.set_xlabel(r"$\nu\,/\,{\rm Hz}$")
-# save the figure
+Path("figures").mkdir(exist_ok=True)
 fig.savefig(f"figures/figure_9.png")
 fig.savefig(f"figures/figure_9.pdf")

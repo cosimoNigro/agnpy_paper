@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 from agnpy.targets import SphericalShellBLR, PointSourceBehindJet
 from agnpy.absorption import Absorption
 from agnpy.utils.plot import load_mpl_rc
-
+from pathlib import Path
+from utils import time_function_call
 
 z = 0.859  # redshift of the source
 L_disk = 2 * 1e46 * u.Unit("erg s-1")
@@ -34,9 +35,9 @@ nu_ref = E_ref.to("Hz", equivalencies=u.spectral()) / (1 + z)
 tau_ref = data_ref[:, 1]
 
 # recompute agnpy absorption on the same frequency points of the reference
-tau_in_blr = abs_in_blr.tau(nu_ref)
-tau_out_blr_mis = abs_out_blr_mis.tau(nu_ref)
-tau_out_ps_blr_mis = abs_out_ps_blr_mis.tau(nu_ref)
+tau_in_blr = time_function_call(abs_in_blr.tau, nu_ref)
+tau_out_blr_mis = time_function_call(abs_out_blr_mis.tau, nu_ref)
+tau_out_ps_blr_mis = time_function_call(abs_out_ps_blr_mis.tau, nu_ref)
 
 
 # figure
@@ -122,6 +123,6 @@ ax4.semilogx(
 )
 ax4.legend(loc="best", fontsize=10)
 ax4.set_xlabel(r"$\nu\,/\,{\rm Hz}$")
-# save the figure
+Path("figures").mkdir(exist_ok=True)
 fig.savefig(f"figures/figure_12.png")
 fig.savefig(f"figures/figure_12.pdf")

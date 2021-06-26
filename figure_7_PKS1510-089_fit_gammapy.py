@@ -1,5 +1,4 @@
 # general modules
-import time
 import logging
 import pkg_resources
 from pathlib import Path
@@ -9,6 +8,7 @@ from astropy.constants import k_B, m_e, c, G, M_sun
 from astropy.table import Table
 from astropy.coordinates import Distance
 import matplotlib.pyplot as plt
+from utils import time_function_call
 
 # agnpy modules
 from agnpy.spectra import BrokenPowerLaw
@@ -28,13 +28,6 @@ from gammapy.modeling.models import (
 from gammapy.estimators import FluxPoints
 from gammapy.datasets import FluxPointsDataset
 from gammapy.modeling import Fit
-
-
-logging.basicConfig(
-    format="%(levelname)s:%(asctime)s %(message)s",
-    datefmt="%m/%d/%Y %I:%M:%S %p",
-    level=logging.INFO,
-)
 
 
 # constants
@@ -300,22 +293,14 @@ Path(fit_check_dir).mkdir(parents=True, exist_ok=True)
 # define the fitter
 fitter = Fit([dataset_ec])
 logging.info("first fit iteration with only EED parameters thawed")
-t_start_1 = time.perf_counter()
-result_1 = fitter.run(optimize_opts={"print_level": 1})
-t_stop_1 = time.perf_counter()
-delta_t_1 = t_stop_1 - t_start_1
-logging.info(f"time elapsed first fit: {delta_t_1:.2f} s")
+result_1 = time_function_call(fitter.run, optimize_opts={"print_level": 1})
 print(result_1)
 print(agnpy_ec.parameters.to_table())
 
 logging.info("second fit iteration with EED and blob parameters thawed")
 # agnpy_ec.log10_r.frozen = False
 agnpy_ec.log10_B.frozen = False
-t_start_2 = time.perf_counter()
-result_2 = fitter.run(optimize_opts={"print_level": 1})
-t_stop_2 = time.perf_counter()
-delta_t_2 = t_stop_2 - t_start_2
-logging.info(f"time elapsed second fit: {delta_t_2:.2f} s")
+result_2 = time_function_call(fitter.run, optimize_opts={"print_level": 1})
 print(result_2)
 print(agnpy_ec.parameters.to_table())
 # plot best-fit model and covariance
@@ -332,11 +317,9 @@ logging.info(f"computing confidence intervals")
 for par in agnpy_ec.parameters:
     if par.frozen is False:
         logging.info(f"computing confidence interval for {par.name}")
-        t_start_confidence = time.perf_counter()
-        confidence = fitter.confidence(parameter=par, reoptimize=True)
-        t_stop_confidence = time.perf_counter()
-        delta_t_confidence = t_stop_confidence - t_start_confidence
-        logging.info(f"time elapsed confidence computation: {delta_t_confidence:.2f} s")
+        confidence = time_function_call(
+            fitter.confidence, parameter=par, reoptimize=True
+        )
         errn = confidence["errn"]
         errp = confidence["errp"]
         print(f"{par.name} = {par.value:.2f} -{errn:.2f}  +{errp:.2f}")
@@ -376,7 +359,6 @@ blob = Blob(
     spectrum_norm_type="differential",
     gamma_size=500,
 )
-print(blob)
 print("jet power in particles", blob.P_jet_e)
 print("jet power in B", blob.P_jet_B)
 
@@ -389,8 +371,6 @@ R_in = agnpy_ec.R_in.value * u.cm
 R_out = agnpy_ec.R_out.value * u.cm
 disk = SSDisk(M_BH, L_disk, eta, R_in, R_out)
 dt = RingDustTorus(L_disk, xi_dt, T_dt, R_dt=R_dt)
-print(disk)
-print(dt)
 
 # radiative processes
 synch = Synchrotron(blob, ssa=True)

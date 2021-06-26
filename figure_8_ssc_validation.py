@@ -1,4 +1,3 @@
-import numpy as np
 import pkg_resources
 import astropy.units as u
 from astropy.coordinates import Distance
@@ -8,21 +7,8 @@ from agnpy.compton import SynchrotronSelfCompton
 from agnpy.utils.plot import load_mpl_rc, sed_x_label, sed_y_label
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
-
-
-def reproduce_sed(dataset, process, nu_range):
-    """function to reproduce the SED data in a given reference dataset"""
-    # reference SED
-    sed_data = np.loadtxt(dataset, delimiter=",")
-    nu_ref = sed_data[:, 0] * u.Hz
-    # apply the comparison range
-    comparison = (nu_ref >= nu_range[0]) * (nu_ref <= nu_range[-1])
-    nu_ref = nu_ref[comparison]
-    sed_ref = sed_data[:, 1][comparison] * u.Unit("erg cm-2 s-1")
-    # compute the sed with agnpy on the same frequencies
-    sed_agnpy = process.sed_flux(nu_ref)
-    return nu_ref, sed_ref, sed_agnpy
-
+from pathlib import Path
+from utils import reproduce_sed
 
 # emission region
 spectrum_norm = 1e48 * u.Unit("erg")
@@ -165,6 +151,6 @@ ax4.semilogx(
 )
 ax4.legend(loc="best", fontsize=10)
 ax4.set_xlabel(sed_x_label)
-# save the figure
+Path("figures").mkdir(exist_ok=True)
 fig.savefig(f"figures/figure_8.png")
 fig.savefig(f"figures/figure_8.pdf")

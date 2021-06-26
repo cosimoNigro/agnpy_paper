@@ -1,7 +1,5 @@
 # general modules
-import time
 import logging
-import warnings
 import pkg_resources
 from pathlib import Path
 import numpy as np
@@ -10,6 +8,7 @@ from astropy.constants import k_B, m_e, c, G, M_sun
 from astropy.table import Table
 from astropy.coordinates import Distance
 import matplotlib.pyplot as plt
+from utils import time_function_call
 
 # agnpy modules
 from agnpy.spectra import BrokenPowerLaw
@@ -27,13 +26,6 @@ from sherpa.stats import Chi2
 from sherpa.optmethods import LevMar
 from sherpa.estmethods import Confidence
 from sherpa.plot import IntervalProjection
-
-
-logging.basicConfig(
-    format="%(levelname)s:%(asctime)s %(message)s",
-    datefmt="%m/%d/%Y %I:%M:%S %p",
-    level=logging.INFO,
-)
 
 
 # constants
@@ -343,21 +335,13 @@ max_x = 1e30 * u.Hz
 sed.notice(min_x, max_x)
 
 logging.info("first fit iteration with only EED parameters thawed")
-t_start_1 = time.perf_counter()
-results_1 = fitter.fit()
-t_stop_1 = time.perf_counter()
-delta_t_1 = t_stop_1 - t_start_1
-logging.info(f"time elapsed first fit: {delta_t_1:.2f} s")
+results_1 = time_function_call(fitter.fit)
 print("fit succesful?", results_1.succeeded)
 print(results_1.format())
 
 logging.info("second fit iteration with EED and blob parameters thawed")
 agnpy_ec.log10_B.thaw()
-t_start_2 = time.perf_counter()
-results_2 = fitter.fit()
-t_stop_2 = time.perf_counter()
-delta_t_2 = t_stop_2 - t_start_2
-logging.info(f"time elapsed second fit: {delta_t_2:.2f} s")
+results_2 = time_function_call(fitter.fit)
 print("fit succesful?", results_2.succeeded)
 print(results_2.format())
 # plot final model without components
@@ -375,11 +359,7 @@ for par in agnpy_ec.pars:
     if par.frozen == False:
         logging.info(f"computing statistics profile for {par.name}")
         proj = IntervalProjection()
-        t_start_profile = time.perf_counter()
-        proj.calc(fitter, par)
-        t_stop_profile = time.perf_counter()
-        delta_t_profile = t_stop_profile - t_start_profile
-        logging.info(f"time elapsed profile computation: {delta_t_profile:.2f} s")
+        time_function_call(proj.calc, fitter, par)
         plt.plot(proj.x, proj.y - final_stat)
         plt.axhline(1, ls="--", color="orange")
         plt.xlabel(par.name)
@@ -388,11 +368,7 @@ for par in agnpy_ec.pars:
         plt.close()
 
 logging.info(f"estimating errors with confidence intervals")
-t_start_error = time.perf_counter()
-errors_2 = fitter.est_errors()
-t_stop_error = time.perf_counter()
-delta_t_error = t_stop_error - t_start_error
-logging.info(f"time elapsed error computation: {delta_t_error:.2f} s")
+errors_2 = time_function_call(fitter.est_errors)
 print(errors_2.format())
 
 
@@ -428,7 +404,6 @@ blob = Blob(
     spectrum_norm_type="differential",
     gamma_size=500,
 )
-print(blob)
 print("jet power in particles", blob.P_jet_e)
 print("jet power in B", blob.P_jet_B)
 
@@ -441,8 +416,6 @@ R_in = agnpy_ec.R_in.val * u.cm
 R_out = agnpy_ec.R_out.val * u.cm
 disk = SSDisk(M_BH, L_disk, eta, R_in, R_out)
 dt = RingDustTorus(L_disk, xi_dt, T_dt, R_dt=R_dt)
-print(disk)
-print(dt)
 
 # radiative processes
 synch = Synchrotron(blob, ssa=True)

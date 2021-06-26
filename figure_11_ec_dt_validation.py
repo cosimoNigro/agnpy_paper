@@ -7,7 +7,8 @@ from agnpy.emission_regions import Blob
 from agnpy.targets import PointSourceBehindJet, RingDustTorus
 from agnpy.compton import ExternalCompton
 from agnpy.utils.plot import load_mpl_rc
-
+from pathlib import Path
+from utils import time_function_call
 
 # blob
 spectrum_norm = 6e42 * u.erg
@@ -53,9 +54,9 @@ nu_ref = data_ref[:, 0] * u.Hz
 sed_ref = data_ref[:, 1] * u.Unit("erg cm-2 s-1")
 
 # recompute agnpy SEDs on the same frequency points of the reference
-sed_agnpy_dt_near = ec_dt_near.sed_flux(nu_ref)
-sed_agnpy_dt_far = ec_dt_far.sed_flux(nu_ref)
-sed_agnpy_ps_dt = ec_ps_dt.sed_flux(nu_ref)
+sed_agnpy_dt_near = time_function_call(ec_dt_near.sed_flux, nu_ref)
+sed_agnpy_dt_far = time_function_call(ec_dt_far.sed_flux, nu_ref)
+sed_agnpy_ps_dt =time_function_call(ec_ps_dt.sed_flux, nu_ref)
 
 
 # figure
@@ -131,6 +132,6 @@ ax4.semilogx(
 )
 ax4.legend(loc="best", fontsize=10)
 ax4.set_xlabel(r"$\nu\,/\,{\rm Hz}$")
-# save the figure
+Path("figures").mkdir(exist_ok=True)
 fig.savefig(f"figures/figure_11.png")
 fig.savefig(f"figures/figure_11.pdf")
