@@ -5,6 +5,8 @@ from agnpy.emission_regions import Blob
 from agnpy.targets import CMB, SSDisk, SphericalShellBLR, RingDustTorus
 from agnpy.utils.plot import load_mpl_rc
 import matplotlib.pyplot as plt
+from pathlib import Path
+from utils import time_function_call
 
 # parameters of the accretion disk
 M_BH = 1e9 * M_sun
@@ -37,11 +39,13 @@ blr = SphericalShellBLR(L_disk, 0.1, "Lyalpha", 1e17 * u.cm)
 dt = RingDustTorus(L_disk, 0.2, 1000 * u.K)
 
 # compute the energy densities at several distances
-r = np.logspace(15, 21) * u.cm
+r = np.logspace(15, 21, 100) * u.cm
+
 u_cmb = cmb.u(blob)
-u_disk = disk.u(r, blob)
-u_blr = blr.u(r, blob)
-u_dt = dt.u(r, blob)
+# time only the function call of densities computed over different distances
+u_disk = time_function_call(disk.u, r, blob)
+u_blr = time_function_call(blr.u, r, blob)
+u_dt = time_function_call(dt.u, r, blob)
 u_syn = blob.u_ph_synch
 
 # plot
@@ -58,18 +62,19 @@ ax.axhline(
     blob.U_B.to_value("erg cm-3"),
     lw=2,
     ls="--",
-    color="cadetblue",
+    color="lightseagreen",
     label="magnetic field",
 )
 ax.axhline(
     blob.u_ph_synch.to_value("erg cm-3"),
     lw=2,
     ls=":",
-    color="cadetblue",
+    color="lightseagreen",
     label="synchrotron",
 )
 ax.legend(loc="best")
 ax.set_xlabel(r_label, fontsize=12)
 ax.set_ylabel(u_label, fontsize=12)
+Path("figures").mkdir(exist_ok=True)
 fig.savefig("figures/figure_4.png")
 fig.savefig("figures/figure_4.pdf")

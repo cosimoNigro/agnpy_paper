@@ -4,6 +4,8 @@ from agnpy.targets import lines_dictionary, SphericalShellBLR, RingDustTorus
 from agnpy.absorption import Absorption
 from agnpy.utils.plot import load_mpl_rc
 import matplotlib.pyplot as plt
+from pathlib import Path
+from utils import time_function_call
 
 # distance of the source
 z = 1
@@ -30,9 +32,6 @@ blr_ly_alpha = SphericalShellBLR(
 blr_H_alpha = SphericalShellBLR(
     L_disk, (L_H_alpha / L_disk).to_value(""), "Halpha", R_H_alpha
 )
-# print the BLRs
-print(blr_ly_alpha)
-print(blr_H_alpha)
 # dust torus
 dt = RingDustTorus(L_disk, 0.2, 1000 * u.K)
 # distance from the central sources
@@ -46,9 +45,9 @@ abs_dt = Absorption(dt, r=r, z=z)
 E = np.logspace(0, 5) * u.GeV
 nu = E.to("Hz", equivalencies=u.spectral())
 # opacities
-tau_blr_ly_alpha = abs_blr_ly_alpha.tau(nu)
-tau_blr_H_alpha = abs_blr_H_alpha.tau(nu)
-tau_dt = abs_dt.tau(nu)
+tau_blr_ly_alpha = time_function_call(abs_blr_ly_alpha.tau, nu)
+tau_blr_H_alpha = time_function_call(abs_blr_H_alpha.tau, nu)
+tau_dt = time_function_call(abs_dt.tau, nu)
 total_tau = tau_blr_ly_alpha + tau_blr_H_alpha + tau_dt
 
 # plot
@@ -77,5 +76,6 @@ ax.fill_between(nu, np.zeros(len(nu)), total_tau, alpha=0.5, color="darkgray", z
 ax.legend(loc="best")
 ax.set_xlabel(r"$\nu\,/\,Hz$")
 ax.set_ylabel(r"$\tau_{\gamma \gamma}$")
+Path("figures").mkdir(exist_ok=True)
 fig.savefig("figures/figure_5.pdf")
 fig.savefig("figures/figure_5.png")

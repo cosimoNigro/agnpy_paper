@@ -6,6 +6,8 @@ from agnpy.compton import ExternalCompton
 from agnpy.constraints import SpectralConstraints
 from agnpy.utils.plot import load_mpl_rc, plot_sed
 import matplotlib.pyplot as plt
+from pathlib import Path
+from utils import time_function_call
 
 # define the emission region and the radiative processes
 spectrum_norm = 6e42 * u.erg
@@ -30,9 +32,7 @@ L_disk = 2e46 * u.Unit("erg s-1")
 xi_dt = 0.2
 T_dt = 1000 * u.K
 dt = RingDustTorus(L_disk, xi_dt, T_dt)
-# print blob and target
-print(blob)
-print(dt)
+
 # array of frequencies to compute the SEDs
 nu = np.logspace(15, 28, 100) * u.Hz
 
@@ -40,18 +40,19 @@ nu = np.logspace(15, 28, 100) * u.Hz
 load_mpl_rc()
 plt.rcParams["text.usetex"] = True
 fig, ax = plt.subplots()
-# loop over three different distances
+# loop over three different distances, compute and time the SEDs
 for r, color in zip(
     [1e19 * u.cm, 1e20 * u.cm, 1e21 * u.cm], ["k", "crimson", "dodgerblue"]
 ):
     ec = ExternalCompton(blob, dt, r)
-    sed = ec.sed_flux(nu)
+    sed = time_function_call(ec.sed_flux, nu)
     _pow = str(int(np.log10(r.to_value("cm"))))
     plot_sed(
         nu, sed, ax=ax, lw=2, label=r"$r = 10^{" + _pow + r"}\,{\rm cm}$", color=color
     )
 ax.legend(loc="best")
 ax.set_title("EC on dust torus")
+Path("figures").mkdir(exist_ok=True)
 fig.savefig("figures/figure_3.png")
 fig.savefig("figures/figure_3.pdf")
 
