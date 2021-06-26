@@ -1,7 +1,6 @@
 # general modules
 import time
 import logging
-import warnings
 import pkg_resources
 from pathlib import Path
 import numpy as np
@@ -35,7 +34,6 @@ logging.basicConfig(
     datefmt="%m/%d/%Y %I:%M:%S %p",
     level=logging.INFO,
 )
-warnings.filterwarnings("ignore")
 
 
 class AgnpySSC(SpectralModel):
@@ -185,11 +183,9 @@ dataset_ssc = FluxPointsDataset(model, flux_points)
 # do not use frequency point below 1e11 Hz, affected by non-blazar emission
 E_min_fit = (1e11 * u.Hz).to("eV", equivalencies=u.spectral())
 dataset_ssc.mask_fit = dataset_ssc.data.energy_ref > E_min_fit
-# plot initial model
-dataset_ssc.plot_spectrum(energy_power=2, energy_unit="eV")
-plt.show()
 
 
+logging.info("performing the fit and estimating the error on the parameters")
 # directory to store the checks performed on the fit
 fit_check_dir = "figures/figure_6_checks_gammapy_fit"
 Path(fit_check_dir).mkdir(parents=True, exist_ok=True)
@@ -203,18 +199,6 @@ delta_t_1 = t_stop_1 - t_start_1
 logging.info(f"time elapsed first fit: {delta_t_1:.2f} s")
 print(result_1)
 print(agnpy_ssc.parameters.to_table())
-# plot best-fit model and covariance
-flux_points.plot(energy_unit="eV", energy_power=2)
-agnpy_ssc.plot(energy_range=[1e-6, 1e15] * u.eV, energy_unit="eV", energy_power=2)
-plt.savefig(f"{fit_check_dir}/best_fit_first_iteration.png")
-plt.close()
-agnpy_ssc.covariance.plot_correlation()
-plt.savefig(f"{fit_check_dir}/correlation_matrix_first_iteration.png")
-plt.close()
-
-import IPython
-
-IPython.embed()
 
 logging.info("second fit iteration with EED and blob parameters thawed")
 agnpy_ssc.delta_D.frozen = False
@@ -229,32 +213,11 @@ print(agnpy_ssc.parameters.to_table())
 # plot best-fit model and covariance
 flux_points.plot(energy_unit="eV", energy_power=2)
 agnpy_ssc.plot(energy_range=[1e-6, 1e15] * u.eV, energy_unit="eV", energy_power=2)
-plt.savefig(f"{fit_check_dir}/best_fit_second_iteration.png")
+plt.savefig(f"{fit_check_dir}/best_fit.png")
 plt.close()
 agnpy_ssc.covariance.plot_correlation()
-plt.savefig(f"{fit_check_dir}/correlation_matrix_second_iteration.png")
+plt.savefig(f"{fit_check_dir}/correlation_matrix.png")
 plt.close()
-
-logging.info("computing statistics profiles")
-# chi2 profiles
-total_stat = result_2.total_stat
-logging.info(f"computing statistics profile")
-for par in agnpy_ssc.parameters:
-    if par.frozen is False:
-        logging.info(f"computing statistics profile for {par.name}")
-        t_start_profile = time.perf_counter()
-        profile = fitter.stat_profile(parameter=par, reoptimize=True)
-        t_stop_profile = time.perf_counter()
-        delta_t_profile = t_stop_profile - t_start_profile
-        logging.info(f"time elapsed profile computation: {delta_t_profile:.2f} s")
-        # plot profile
-        plt.plot(profile[f"{par.name}_scan"], profile["stat_scan"] - total_stat)
-        plt.xlabel(f"{par.unit}")
-        plt.ylabel(r"$\Delta\chi^2$")
-        plt.axhline(1, ls="--", color="orange")
-        plt.title(f"{par.name}: {par.value:.3f} +- {par.error:.3f}")
-        plt.savefig(f"{fit_check_dir}/chi2_profile_parameter_{par.name}.png")
-        plt.close()
 
 logging.info(f"computing confidence intervals")
 for par in agnpy_ssc.parameters:
@@ -265,7 +228,10 @@ for par in agnpy_ssc.parameters:
         t_stop_confidence = time.perf_counter()
         delta_t_confidence = t_stop_confidence - t_start_confidence
         logging.info(f"time elapsed confidence computation: {delta_t_confidence:.2f} s")
-        print(confidence)
+        errn = confidence["errn"]
+        errp = confidence["errp"]
+        print(f"{par.name} = {par.value:.2f} -{errn:.2f}  +{errp:.2f}")
+
 
 logging.info("plot the final model with the individual components")
 k_e = 10 ** agnpy_ssc.log10_k_e.value * u.Unit("cm-3")
@@ -275,13 +241,13 @@ gamma_b = 10 ** agnpy_ssc.log10_gamma_b.value
 gamma_min = 10 ** agnpy_ssc.log10_gamma_min.value
 gamma_max = 10 ** agnpy_ssc.log10_gamma_max.value
 B = 10 ** agnpy_ssc.log10_B.value * u.G
+delta_D = agnpy_ssc.delta_D.value
 R_b = (
     c
     * agnpy_ssc.t_var.quantity
     * agnpy_ssc.delta_D.quantity
     / (1 + agnpy_ssc.z.quantity)
 ).to("cm")
-delta_D = agnpy_ssc.delta_D.value
 parameters = {
     "p1": p1,
     "p2": p2,
@@ -327,10 +293,21 @@ ax.loglog(
 ax.loglog(
     nu / (1 + z), ssc_sed, ls="--", lw=1.3, color="dodgerblue", label="agnpy, SSC"
 )
+# systematics error in gray
 ax.errorbar(
-    flux_points_table["e_ref"].to("Hz", equivalencies=u.spectral()).data,
-    flux_points_table["e2dnde"].to("erg cm-2 s-1").data,
-    yerr=flux_points_table["e2dnde_err"].to("erg cm-2 s-1").data,
+    x.to("Hz", equivalencies=u.spectral()).value,
+    y.value,
+    yerr=y_err_syst.value,
+    marker=",",
+    ls="",
+    color="gray",
+    label="",
+)
+# statistics error in black
+ax.errorbar(
+    x.to("Hz", equivalencies=u.spectral()).value,
+    y.value,
+    yerr=y_err_stat.value,
     marker=".",
     ls="",
     color="k",
@@ -338,8 +315,9 @@ ax.errorbar(
 )
 ax.set_xlabel(sed_x_label)
 ax.set_ylabel(sed_y_label)
-ax.set_xlim([1e-14, 1e-9])
+ax.set_xlim([1e9, 1e29])
 ax.set_ylim([1e-14, 1e-9])
 ax.legend(loc="best")
+plt.show()
 fig.savefig("figures/figure_6_gammapy_fit.png")
 fig.savefig("figures/figure_6_gammapy_fit.pdf")

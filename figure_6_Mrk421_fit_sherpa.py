@@ -1,7 +1,6 @@
 # general modules
 import time
 import logging
-import warnings
 import pkg_resources
 from pathlib import Path
 import numpy as np
@@ -33,7 +32,6 @@ logging.basicConfig(
     datefmt="%m/%d/%Y %I:%M:%S %p",
     level=logging.INFO,
 )
-# warnings.filterwarnings("ignore")
 
 
 class AgnpySSC(model.RegriddableModel1D):
@@ -55,11 +53,13 @@ class AgnpySSC(model.RegriddableModel1D):
         self.log10_gamma_max = model.Parameter(name, "log10_gamma_max", 5, min=4, max=8)
         # source general parameters
         self.z = model.Parameter(name, "z", 0.1, min=0.01, max=1)
-        self.d_L = model.Parameter(name, "d_L", 1e27, min=1e25, max=1e33)
+        self.d_L = model.Parameter(name, "d_L", 1e27, min=1e25, max=1e33, units="cm")
         # emission region parameters
         self.delta_D = model.Parameter(name, "delta_D", 10, min=0, max=40)
         self.log10_B = model.Parameter(name, "log10_B", -2, min=-4, max=2)
-        self.t_var = model.Parameter(name, "t_var", 600, min=10, max=np.pi * 1e7)
+        self.t_var = model.Parameter(
+            name, "t_var", 600, min=10, max=np.pi * 1e7, units="s"
+        )
 
         model.RegriddableModel1D.__init__(
             self,
@@ -190,6 +190,7 @@ agnpy_ssc.log10_gamma_max = np.log10(1e6)
 agnpy_ssc.log10_gamma_max.freeze()
 
 
+logging.info("performing the fit and estimating the error on the parameters")
 # directory to store the checks performed on the fit
 fit_check_dir = "figures/figure_6_checks_sherpa_fit"
 Path(fit_check_dir).mkdir(parents=True, exist_ok=True)
@@ -202,7 +203,6 @@ min_x = 1e11 * u.Hz
 max_x = 1e30 * u.Hz
 sed.notice(min_x, max_x)
 
-# perform the first fit, we are only varying the spectral parameters
 logging.info("first fit iteration with only EED parameters thawed")
 t_start_1 = time.perf_counter()
 results_1 = fitter.fit()
@@ -312,9 +312,11 @@ ax.loglog(
 ax.loglog(
     nu / (1 + z), ssc_sed, ls="--", lw=1.3, color="dodgerblue", label="agnpy, SSC"
 )
+# systematics error in gray
 ax.errorbar(
     sed.x, sed.y, yerr=sed.get_syserror(), marker=",", ls="", color="gray",
 )
+# statistics error in gray
 ax.errorbar(
     sed.x,
     sed.y,
@@ -326,6 +328,7 @@ ax.errorbar(
 )
 ax.set_xlabel(sed_x_label)
 ax.set_ylabel(sed_y_label)
+ax.set_xlim([1e9, 1e29])
 ax.set_ylim([1e-14, 1e-9])
 ax.legend(loc="best")
 plt.show()

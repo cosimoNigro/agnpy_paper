@@ -1,7 +1,6 @@
 # general modules
 import time
 import logging
-import warnings
 import pkg_resources
 from pathlib import Path
 import numpy as np
@@ -36,7 +35,7 @@ logging.basicConfig(
     datefmt="%m/%d/%Y %I:%M:%S %p",
     level=logging.INFO,
 )
-warnings.filterwarnings("ignore")
+
 
 # constants
 mec2 = m_e.to("erg", equivalencies=u.mass_energy())
@@ -65,20 +64,20 @@ class AgnpyEC(SpectralModel):
     d_L = Parameter("d_L", "1e27 cm", min=1e25, max=1e33)
     # emission region parameters
     delta_D = Parameter("delta_D", 10, min=1, max=40)
-    mu_s = Parameter("mu_s", 0.9, min=0.0, max=1.0)
     log10_B = Parameter("log10_B", 0.0, min=-3.0, max=1.0)
-    alpha_jet = Parameter("alpha_jet", 0.05, min=0.0, max=1.1)
+    t_var = Parameter("t_var", "600 s", min=10, max=np.pi * 1e7)
+    mu_s = Parameter("mu_s", 0.9, min=0.0, max=1.0)
     log10_r = Parameter("log10_r", 17.0, min=16.0, max=20.0)
     # disk parameters
     log10_L_disk = Parameter("log10_L_disk", 45.0, min=42.0, max=48.0)
     log10_M_BH = Parameter("log10_M_BH", 42, min=32, max=45)
-    m_dot = Parameter("m_dot", 1e26, min=1e24, max=1e30)
-    R_in = Parameter("R_in", 1e14, min=1e12, max=1e16)
-    R_out = Parameter("R_out", 1e17, min=1e12, max=1e19)
+    m_dot = Parameter("m_dot", "1e26 g s-1", min=1e24, max=1e30)
+    R_in = Parameter("R_in", "1e14 cm", min=1e12, max=1e16)
+    R_out = Parameter("R_out", "1e17 cm", min=1e12, max=1e19)
     # DT parameters
     xi_dt = Parameter("xi_dt", 0.6, min=0.0, max=1.0)
-    T_dt = Parameter("T_dt", 1.0e3, min=1.0e2, max=1.0e4)
-    R_dt = Parameter("R_dt", 2.5e18, min=1.0e17, max=1.0e19)
+    T_dt = Parameter("T_dt", "1e3 K", min=1e2, max=1e4)
+    R_dt = Parameter("R_dt", "2.5e18 cm", min=1.0e17, max=1.0e19)
 
     @staticmethod
     def evaluate(
@@ -92,9 +91,9 @@ class AgnpyEC(SpectralModel):
         z,
         d_L,
         delta_D,
-        mu_s,
         log10_B,
-        alpha_jet,
+        t_var,
+        mu_s,
         log10_r,
         log10_L_disk,
         log10_M_BH,
@@ -111,15 +110,10 @@ class AgnpyEC(SpectralModel):
         gamma_min = 10 ** log10_gamma_min
         gamma_max = 10 ** log10_gamma_max
         B = 10 ** log10_B * u.G
+        R_b = (c * t_var * delta_D / (1 + z)).to("cm")
+        r = 10 ** log10_r * u.cm
         L_disk = 10 ** log10_L_disk * u.Unit("erg s-1")
         M_BH = 10 ** log10_M_BH * u.Unit("g")
-        m_dot *= u.Unit("g s-1")
-        R_in *= u.cm
-        R_out *= u.cm
-        R_dt *= u.cm
-        T_dt *= u.K
-        r = 10 ** log10_r * u.cm
-        R_b = r * alpha_jet
         eps_dt = 2.7 * (k_B * T_dt / mec2).to_value("")
 
         nu = energy.to("Hz", equivalencies=u.spectral())
@@ -204,12 +198,11 @@ y_err_stat = sed_table["nuFnu_err_lo"].to("erg cm-2 s-1")
 # array of systematic errors, will just be summed in quadrature to the statistical error
 # we assume
 # - 15% on gamma-ray instruments
-# - 5% on X-ray instruments
-# - 5% on UV instruments
+# - 10% on lower waveband instruments
 y_err_syst = np.zeros(len(x))
 gamma = x > 0.1 * u.GeV
-y_err_syst[gamma] = 0.10
-y_err_syst[~gamma] = 0.05
+y_err_syst[gamma] = 0.15
+y_err_syst[~gamma] = 0.10
 y_err_syst = y * y_err_syst
 # store in a Table readable by gammapy's FluxPoints
 flux_points_table = Table()
@@ -227,7 +220,6 @@ z = 0.361
 d_L = Distance(z=z).to("cm")
 # blob
 Gamma = 20
-alpha_jet = 0.047  # jet opening angle
 delta_D = 25
 Beta = np.sqrt(1 - 1 / np.power(Gamma, 2))  # jet relativistic speed
 mu_s = (1 - 1 / (Gamma * delta_D)) / Beta  # viewing angle
@@ -242,10 +234,11 @@ R_in = 6 * R_g
 R_out = 10000 * R_g
 # DT
 xi_dt = 0.6  # fraction of disk luminosity reprocessed by the DT
-R_dt = 6.47 * 1e18 * u.cm  # radius of DT
 T_dt = 1e3 * u.K
-# location of the emission region
-r = 7e17 * u.cm
+R_dt = 6.47 * 1e18 * u.cm
+# size and location of the emission region
+t_var = 0.5 * u.d
+r = 6e17 * u.cm
 # instance of the model wrapping angpy functionalities
 # - AGN parameters
 # -- distances
@@ -258,30 +251,30 @@ agnpy_ec.log10_L_disk.quantity = np.log10(L_disk.to_value("erg s-1"))
 agnpy_ec.log10_L_disk.frozen = True
 agnpy_ec.log10_M_BH.quantity = np.log10(M_BH.to_value("g"))
 agnpy_ec.log10_M_BH.frozen = True
-agnpy_ec.m_dot.quantity = m_dot.to_value("g s-1")
+agnpy_ec.m_dot.quantity = m_dot
 agnpy_ec.m_dot.frozen = True
-agnpy_ec.R_in.quantity = R_in.to_value("cm")
+agnpy_ec.R_in.quantity = R_in
 agnpy_ec.R_in.frozen = True
-agnpy_ec.R_out.quantity = R_out.to_value("cm")
+agnpy_ec.R_out.quantity = R_out
 agnpy_ec.R_out.frozen = True
 # -- Dust Torus
 agnpy_ec.xi_dt.quantity = xi_dt
 agnpy_ec.xi_dt.frozen = True
-agnpy_ec.T_dt.quantity = T_dt.to_value("K")
+agnpy_ec.T_dt.quantity = T_dt
 agnpy_ec.T_dt.frozen = True
-agnpy_ec.R_dt.quantity = R_dt.to_value("cm")
+agnpy_ec.R_dt.quantity = R_dt
 agnpy_ec.R_dt.frozen = True
 # - blob parameters
 agnpy_ec.delta_D.quantity = delta_D
 agnpy_ec.delta_D.frozen = True
-agnpy_ec.mu_s.quantity = mu_s
-agnpy_ec.mu_s.frozen = True
-agnpy_ec.alpha_jet.quantity = alpha_jet
-agnpy_ec.alpha_jet.frozen = True
-agnpy_ec.log10_r.quantity = np.log10(r.to_value("cm"))
-agnpy_ec.log10_r.frozen = True
 agnpy_ec.log10_B.quantity = np.log10(B.to_value("G"))
 agnpy_ec.log10_B.frozen = True
+agnpy_ec.mu_s.quantity = mu_s
+agnpy_ec.mu_s.frozen = True
+agnpy_ec.t_var.quantity = t_var
+agnpy_ec.t_var.frozen = True
+agnpy_ec.log10_r.quantity = np.log10(r.to_value("cm"))
+agnpy_ec.log10_r.frozen = True
 # - EED
 agnpy_ec.log10_k_e.quantity = np.log10(0.05)
 agnpy_ec.p1.quantity = 1.8
@@ -298,13 +291,11 @@ dataset_ec = FluxPointsDataset(model, flux_points)
 # do not use frequency point below 1e11 Hz, affected by non-blazar emission
 E_min_fit = (1e11 * u.Hz).to("eV", equivalencies=u.spectral())
 dataset_ec.mask_fit = dataset_ec.data.energy_ref > E_min_fit
-# plot initial model
-dataset_ec.plot_spectrum(energy_power=2, energy_unit="eV")
-plt.show()
 
 
+logging.info("performing the fit and estimating the error on the parameters")
 # directory to store the checks performed on the fit
-fit_check_dir = "figures/figure_6_checks_gammapy_fit"
+fit_check_dir = "figures/figure_7_checks_gammapy_fit"
 Path(fit_check_dir).mkdir(parents=True, exist_ok=True)
 # define the fitter
 fitter = Fit([dataset_ec])
@@ -316,18 +307,9 @@ delta_t_1 = t_stop_1 - t_start_1
 logging.info(f"time elapsed first fit: {delta_t_1:.2f} s")
 print(result_1)
 print(agnpy_ec.parameters.to_table())
-# plot best-fit model and covariance
-flux_points.plot(energy_unit="eV", energy_power=2)
-agnpy_ec.plot(energy_range=[1e-6, 1e15] * u.eV, energy_unit="eV", energy_power=2)
-plt.ylim([10 ** (-13.5), 10 ** (-7.5)])
-plt.savefig(f"{fit_check_dir}/best_fit_first_iteration.png")
-plt.close()
-agnpy_ec.covariance.plot_correlation()
-plt.savefig(f"{fit_check_dir}/correlation_matrix_first_iteration.png")
-plt.close()
 
 logging.info("second fit iteration with EED and blob parameters thawed")
-agnpy_ec.log10_r.frozen = False
+# agnpy_ec.log10_r.frozen = False
 agnpy_ec.log10_B.frozen = False
 t_start_2 = time.perf_counter()
 result_2 = fitter.run(optimize_opts={"print_level": 1})
@@ -340,36 +322,25 @@ print(agnpy_ec.parameters.to_table())
 flux_points.plot(energy_unit="eV", energy_power=2)
 agnpy_ec.plot(energy_range=[1e-6, 1e15] * u.eV, energy_unit="eV", energy_power=2)
 plt.ylim([10 ** (-13.5), 10 ** (-7.5)])
-plt.savefig(f"{fit_check_dir}/best_fit_second_iteration.png")
+plt.savefig(f"{fit_check_dir}/best_fit.png")
 plt.close()
 agnpy_ec.covariance.plot_correlation()
-plt.savefig(f"{fit_check_dir}/correlation_matrix_second_iteration.png")
+plt.savefig(f"{fit_check_dir}/correlation_matrix.png")
 plt.close()
 
-logging.info("computing statistics profiles")
-# chi2 profiles
-total_stat = result_2.total_stat
-for reoptimize in (False, True):
-    logging.info(f"computing statistics profile with reoptimization {reoptimize}")
-    for par in dataset_ec.models.parameters:
-        if par.frozen is False:
-            logging.info(f"computing statistics profile for {par.name}")
-            t_start_profile = time.perf_counter()
-            # set a decent range for profiling from -10% to 10% of the minimum value
-            profile = fitter.stat_profile(parameter=par, reoptimize=reoptimize)
-            t_stop_profile = time.perf_counter()
-            delta_t_profile = t_stop_profile - t_start_profile
-            logging.info(f"time elapsed profile computation: {delta_t_profile:.2f} s")
-            plt.plot(profile[f"{par.name}_scan"], profile["stat_scan"] - total_stat)
-            plt.xlabel(f"{par.unit}")
-            plt.ylabel(r"$\Delta\chi^2$")
-            plt.axhline(1, ls="--", color="orange")
-            plt.title(f"{par.name}: {par.value:.3f} +- {par.error:.3f}")
-            reoptimized = str(reoptimize).lower()
-            plt.savefig(
-                f"{fit_check_dir}/chi2_profile_parameter_{par.name}_reoptimize_{reoptimized}.png"
-            )
-            plt.close()
+logging.info(f"computing confidence intervals")
+for par in agnpy_ec.parameters:
+    if par.frozen is False:
+        logging.info(f"computing confidence interval for {par.name}")
+        t_start_confidence = time.perf_counter()
+        confidence = fitter.confidence(parameter=par, reoptimize=True)
+        t_stop_confidence = time.perf_counter()
+        delta_t_confidence = t_stop_confidence - t_start_confidence
+        logging.info(f"time elapsed confidence computation: {delta_t_confidence:.2f} s")
+        errn = confidence["errn"]
+        errp = confidence["errp"]
+        print(f"{par.name} = {par.value:.2f} -{errn:.2f}  +{errp:.2f}")
+
 
 logging.info("plot the final model with the individual components")
 # plot the best fit model with the individual components
@@ -382,7 +353,9 @@ gamma_max = 10 ** agnpy_ec.log10_gamma_max.value
 B = 10 ** agnpy_ec.log10_B.value * u.G
 r = 10 ** agnpy_ec.log10_r.value * u.cm
 delta_D = agnpy_ec.delta_D.value
-R_b = r * alpha_jet
+R_b = (
+    c * agnpy_ec.t_var.quantity * agnpy_ec.delta_D.quantity / (1 + agnpy_ec.z.quantity)
+).to("cm")
 # blob definition
 parameters = {
     "p1": p1,
@@ -403,6 +376,10 @@ blob = Blob(
     spectrum_norm_type="differential",
     gamma_size=500,
 )
+print(blob)
+print("jet power in particles", blob.P_jet_e)
+print("jet power in B", blob.P_jet_B)
+
 # Disk and DT definition
 L_disk = 10 ** agnpy_ec.log10_L_disk.value * u.Unit("erg s-1")
 M_BH = 10 ** agnpy_ec.log10_M_BH.value * u.Unit("g")
@@ -412,6 +389,8 @@ R_in = agnpy_ec.R_in.value * u.cm
 R_out = agnpy_ec.R_out.value * u.cm
 disk = SSDisk(M_BH, L_disk, eta, R_in, R_out)
 dt = RingDustTorus(L_disk, xi_dt, T_dt, R_dt=R_dt)
+print(disk)
+print(dt)
 
 # radiative processes
 synch = Synchrotron(blob, ssa=True)
@@ -434,6 +413,14 @@ ax.loglog(
 )
 ax.loglog(
     nu / (1 + z),
+    ec_dt_sed,
+    ls="--",
+    lw=1.3,
+    color="dodgerblue",
+    label="agnpy, EC on DT",
+)
+ax.loglog(
+    nu / (1 + z),
     synch_sed,
     ls="--",
     lw=1.3,
@@ -441,10 +428,7 @@ ax.loglog(
     label="agnpy, synchrotron",
 )
 ax.loglog(
-    nu / (1 + z), ssc_sed, ls="--", lw=1.3, color="dodgerblue", label="agnpy, SSC"
-)
-ax.loglog(
-    nu / (1 + z), ec_dt_sed, ls="--", lw=1.3, color="seagreen", label="agnpy, EC on DT"
+    nu / (1 + z), ssc_sed, ls="--", lw=1.3, color="lightseagreen", label="agnpy, SSC"
 )
 ax.loglog(
     nu / (1 + z),
@@ -462,10 +446,21 @@ ax.loglog(
     color="dimgray",
     label="agnpy, DT blackbody",
 )
+# systematics error in gray
 ax.errorbar(
-    flux_points_table["e_ref"].to("Hz", equivalencies=u.spectral()).data,
-    flux_points_table["e2dnde"].to("erg cm-2 s-1").data,
-    yerr=flux_points_table["e2dnde_err"].to("erg cm-2 s-1").data,
+    x.to("Hz", equivalencies=u.spectral()).value,
+    y.value,
+    yerr=y_err_syst.value,
+    marker=",",
+    ls="",
+    color="gray",
+    label="",
+)
+# statistics error in black
+ax.errorbar(
+    x.to("Hz", equivalencies=u.spectral()).value,
+    y.value,
+    yerr=y_err_stat.value,
     marker=".",
     ls="",
     color="k",
@@ -473,6 +468,7 @@ ax.errorbar(
 )
 ax.set_xlabel(sed_x_label)
 ax.set_ylabel(sed_y_label)
+ax.set_xlim([1e9, 1e29])
 ax.set_ylim([10 ** (-13.5), 10 ** (-7.5)])
 ax.legend(
     loc="upper center", fontsize=10, ncol=2,
