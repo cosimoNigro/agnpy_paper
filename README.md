@@ -23,11 +23,14 @@ The repository contains the following files
 ├── figure_11_ec_dt_validation.py
 ├── figure_12_tau_blr_validation.py
 ├── figure_13_tau_dt_validation.py
-└── README.md
+├── README.md
+└── utils.py
+
 ```
 ### scripts
 Each python script is named after the figure it produces in the paper, followed by a brief description of the computation performed.
-Figure 6 and 7, representing the fit of two blazars multi-wavelength SEDs, can be produced either using sherpa or gammapy as fitting routine.
+Figure 6 and 7, representing the fit of two blazars multi-wavelength SEDs, can be produced either using sherpa or gammapy fitting routines.
+`utils.py` contains some utility function for timing and reproduction of the reference results. 
 
 ### yaml environment
 The `agnpy_paper.yml` file can be used to set-up a `conda` environment containing the same dependencies used in the paper.
