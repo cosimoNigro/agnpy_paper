@@ -242,6 +242,7 @@ spectrum_dict = {"type": "BrokenPowerLaw", "parameters": parameters}
 blob = Blob(
     R_b, z, delta_D, delta_D, B, k_e, spectrum_dict, spectrum_norm_type="differential"
 )
+print(blob)
 print("jet power in particles", blob.P_jet_e)
 print("jet power in B", blob.P_jet_B)
 

@@ -404,6 +404,7 @@ blob = Blob(
     spectrum_norm_type="differential",
     gamma_size=500,
 )
+print(blob)
 print("jet power in particles", blob.P_jet_e)
 print("jet power in B", blob.P_jet_B)
 
