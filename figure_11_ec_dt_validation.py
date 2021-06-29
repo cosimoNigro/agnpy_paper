@@ -56,7 +56,7 @@ sed_ref = data_ref[:, 1] * u.Unit("erg cm-2 s-1")
 # recompute agnpy SEDs on the same frequency points of the reference
 sed_agnpy_dt_near = time_function_call(ec_dt_near.sed_flux, nu_ref)
 sed_agnpy_dt_far = time_function_call(ec_dt_far.sed_flux, nu_ref)
-sed_agnpy_ps_dt =time_function_call(ec_ps_dt.sed_flux, nu_ref)
+sed_agnpy_ps_dt = time_function_call(ec_ps_dt.sed_flux, nu_ref)
 
 
 # figure
