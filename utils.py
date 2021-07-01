@@ -19,11 +19,11 @@ def time_function_call(func, *args, **kwargs):
     val = func(*args, **kwargs)
     t_stop = time.perf_counter()
     delta_t = t_stop - t_start
-    # the first argument is either an array of frequencies
     logging.info(f"elapsed time {func} call: {delta_t:.3f} s")
-    # if the first argument is an array of quantities
-    if isinstance(args[0], u.Quantity) and isinstance(args[0], np.ndarray):
-        logging.info(f"computed over a grid of {len(args[0])} points")
+    if len(args) != 0:
+        # if the first argument is an array of quantitites
+        if isinstance(args[0], u.Quantity) and isinstance(args[0], np.ndarray):
+            logging.info(f"computed over a grid of {len(args[0])} points")
     return val
 
 
