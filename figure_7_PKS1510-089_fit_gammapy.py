@@ -360,8 +360,8 @@ blob = Blob(
     gamma_size=500,
 )
 print(blob)
-print("jet power in particles", blob.P_jet_e)
-print("jet power in B", blob.P_jet_B)
+print(f"jet power in particles: {blob.P_jet_e:.2f}")
+print(f"jet power in B: {blob.P_jet_B:.2f}")
 
 # Disk and DT definition
 L_disk = 10 ** agnpy_ec.log10_L_disk.value * u.Unit("erg s-1")

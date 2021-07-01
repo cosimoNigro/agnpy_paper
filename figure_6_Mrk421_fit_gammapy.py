@@ -243,8 +243,8 @@ blob = Blob(
     R_b, z, delta_D, delta_D, B, k_e, spectrum_dict, spectrum_norm_type="differential"
 )
 print(blob)
-print("jet power in particles", blob.P_jet_e)
-print("jet power in B", blob.P_jet_B)
+print(f"jet power in particles: {blob.P_jet_e:.2f}")
+print(f"jet power in B: {blob.P_jet_B:.2f}")
 
 # compute the obtained emission region
 synch = Synchrotron(blob)
