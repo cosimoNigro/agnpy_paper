@@ -15,9 +15,9 @@ H_alpha_line = lines_dictionary["Halpha"]
 # build a BLR composed of two spherical shells emitting two different lines: Ly alpha and H alpha
 L_disk = 2 * 1e46 * u.Unit("erg s-1")
 # the luminosity of the shell formed only by the Lyman Alpha line is a fraction 0.1 of the disk luminosity
-xi_ly_alpha = 0.1
-L_ly_alpha = 0.1 * L_disk
-R_ly_alpha = 1.1 * 1e17 * u.cm
+xi_ly_alpha = 0.024
+L_ly_alpha = xi_ly_alpha * L_disk
+R_ly_alpha = 1e17 * u.cm
 # all the shells radiuses and luminosities are given as a function of the Lybeta shell
 # obtain its radius and luminosity from the Ly alpha dictionary
 R_ly_beta = R_ly_alpha / ly_alpha_line["R_Hbeta_ratio"]
@@ -33,9 +33,13 @@ blr_H_alpha = SphericalShellBLR(
     L_disk, (L_H_alpha / L_disk).to_value(""), "Halpha", R_H_alpha
 )
 # dust torus
-dt = RingDustTorus(L_disk, 0.2, 1000 * u.K)
+dt = RingDustTorus(L_disk, 0.1, 1000 * u.K)
+# print targets to check their parameters
+print(blr_ly_alpha)
+print(blr_H_alpha)
+print(dt)
 # distance from the central sources
-r = 1.1e16 * u.cm
+r = 1e16 * u.cm
 
 # absorptions
 abs_blr_ly_alpha = Absorption(blr_ly_alpha, r=r, z=z)

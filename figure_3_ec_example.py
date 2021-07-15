@@ -29,7 +29,7 @@ blob.set_gamma_size(500)
 # target
 # disk parameters
 L_disk = 2e46 * u.Unit("erg s-1")
-xi_dt = 0.2
+xi_dt = 0.1
 T_dt = 1000 * u.K
 dt = RingDustTorus(L_disk, xi_dt, T_dt)
 

@@ -9,11 +9,11 @@ from pathlib import Path
 from utils import time_function_call
 
 # parameters of the accretion disk
-M_BH = 1e9 * M_sun
-L_disk = 1e46 * u.Unit("erg s-1")
+M_BH = 1.2 * 1e9 * M_sun
+L_disk = 2e46 * u.Unit("erg s-1")
 eta = 1 / 12
 R_tilde_in = 6
-R_tilde_out = 50
+R_tilde_out = 200
 
 # blob definition
 spectrum_norm = 6e42 * u.erg
@@ -35,11 +35,11 @@ blob = Blob(R_b, z, delta_D, Gamma, B, spectrum_norm, spectrum_dict)
 # add CMB and the photon density of the synchrotron radiation for comparison
 cmb = CMB(z=blob.z)
 disk = SSDisk(M_BH, L_disk, eta, R_tilde_in, R_tilde_out, R_g_units=True)
-blr = SphericalShellBLR(L_disk, 0.1, "Lyalpha", 1e17 * u.cm)
-dt = RingDustTorus(L_disk, 0.2, 1000 * u.K)
+blr = SphericalShellBLR(L_disk, 0.024, "Lyalpha", 1e17 * u.cm)
+dt = RingDustTorus(L_disk, 0.1, 1000 * u.K)
 
 # compute the energy densities at several distances
-r = np.logspace(15, 21) * u.cm
+r = np.logspace(15, 21, 100) * u.cm
 
 u_cmb = cmb.u(blob)
 # time only the function call of densities computed over different distances
