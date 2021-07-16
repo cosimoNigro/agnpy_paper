@@ -39,7 +39,7 @@ blr = SphericalShellBLR(L_disk, 0.024, "Lyalpha", 1e17 * u.cm)
 dt = RingDustTorus(L_disk, 0.1, 1000 * u.K)
 
 # compute the energy densities at several distances
-r = np.logspace(15, 21, 100) * u.cm
+r = np.logspace(15, 21) * u.cm
 
 u_cmb = cmb.u(blob)
 # time only the function call of densities computed over different distances
