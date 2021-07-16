@@ -38,12 +38,12 @@ blr = SphericalShellBLR(L_disk, xi_line, "Lyalpha", R_line)
 ps_blr = PointSourceBehindJet(blr.xi_line * L_disk, blr.epsilon_line)
 # EC
 # - inside the BLR, to be compared with the reference
-blob.set_gamma_size(500)
+blob.set_gamma_size(400)
 ec_blr_in = ExternalCompton(blob, blr, r=1e16 * u.cm)
 # - outside the BLR, to be compared with the point-source approximation
-blob.set_gamma_size(200)
+blob.set_gamma_size(300)
 ec_blr_out = ExternalCompton(blob, blr, r=1e20 * u.cm)
-blob.set_gamma_size(500)
+blob.set_gamma_size(600)
 ec_ps_blr = ExternalCompton(blob, ps_blr, r=1e20 * u.cm)
 
 # plot SEDs
