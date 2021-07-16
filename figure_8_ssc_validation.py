@@ -44,18 +44,18 @@ data_ssc_dermer = pkg_resources.resource_filename(
 
 # synch SEDs
 synch_nu_range = [1e9, 5e18] * u.Hz
-nu_synch_jetset, sed_synch_agnpy_jetset, sed_synch_jetset = reproduce_sed(
+nu_synch_jetset, sed_synch_jetset, sed_synch_agnpy_jetset = reproduce_sed(
     data_synch_jetset, synch, synch_nu_range
 )
-nu_synch_dermer, sed_synch_agnpy_dermer, sed_synch_dermer = reproduce_sed(
+nu_synch_dermer, sed_synch_dermer, sed_synch_agnpy_dermer = reproduce_sed(
     data_synch_dermer, synch, synch_nu_range
 )
 # ssc SEDs
 ssc_nu_range = [1e14, 1e26] * u.Hz
-nu_ssc_jetset, sed_ssc_agnpy_jetset, sed_ssc_jetset = reproduce_sed(
+nu_ssc_jetset, sed_ssc_jetset, sed_ssc_agnpy_jetset = reproduce_sed(
     data_ssc_jetset, ssc, ssc_nu_range
 )
-nu_ssc_dermer, sed_ssc_agnpy_dermer, sed_ssc_dermer = reproduce_sed(
+nu_ssc_dermer, sed_ssc_dermer, sed_ssc_agnpy_dermer = reproduce_sed(
     data_ssc_dermer, ssc, ssc_nu_range
 )
 
@@ -71,7 +71,12 @@ ax3 = fig.add_subplot(spec[1, 0], sharex=ax1)
 ax4 = fig.add_subplot(spec[1, 1], sharex=ax2, sharey=ax3)
 # synch SEDs
 ax1.loglog(
-    nu_synch_dermer, sed_synch_agnpy_dermer, ls="-", color="crimson", label="agnpy"
+    nu_synch_dermer,
+    sed_synch_agnpy_dermer,
+    lw=2.1,
+    ls="-",
+    color="crimson",
+    label="agnpy",
 )
 ax1.loglog(
     nu_synch_dermer,
@@ -88,7 +93,9 @@ ax1.legend(loc="best")
 ax1.set_title("synchrotron")
 ax1.set_ylim([1e-14, 1e-9])
 # ssc SEDs
-ax2.loglog(nu_ssc_dermer, sed_ssc_agnpy_dermer, ls="-", color="crimson", label="agnpy")
+ax2.loglog(
+    nu_ssc_dermer, sed_ssc_agnpy_dermer, lw=2.1, ls="-", color="crimson", label="agnpy"
+)
 ax2.loglog(
     nu_ssc_dermer,
     sed_ssc_dermer,
