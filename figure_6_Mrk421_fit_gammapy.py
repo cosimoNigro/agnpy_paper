@@ -127,14 +127,14 @@ y_err_stat = sed_table["nuFnu_err"].to("erg cm-2 s-1")
 # - 5% on lower-energy instruments
 y_err_syst = np.zeros(len(x))
 # define energy ranges
-nu_vhe = 100 * u.GeV
-nu_he = 0.1 * u.GeV
-nu_x_ray_max = 300 * u.keV
-nu_x_ray_min = 0.3 * u.keV
-vhe_gamma = x >= nu_vhe
-he_gamma = (x >= nu_he) * (x < nu_vhe)
-x_ray = (x >= nu_x_ray_min) * (x < nu_x_ray_max)
-uv_to_radio = x < nu_x_ray_min
+e_vhe = 100 * u.GeV
+e_he = 0.1 * u.GeV
+e_x_ray_max = 300 * u.keV
+e_x_ray_min = 0.3 * u.keV
+vhe_gamma = x >= e_vhe
+he_gamma = (x >= e_he) * (x < e_vhe)
+x_ray = (x >= e_x_ray_min) * (x < e_x_ray_max)
+uv_to_radio = x < e_x_ray_min
 # declare systematics
 y_err_syst[vhe_gamma] = 0.30
 y_err_syst[he_gamma] = 0.10

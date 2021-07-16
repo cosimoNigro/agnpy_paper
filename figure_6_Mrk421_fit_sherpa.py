@@ -134,7 +134,6 @@ x = sed_table["nu"]
 y = sed_table["nuFnu"]
 y_err_stat = sed_table["nuFnu_err"]
 # array of systematic errors, will just be summed in quadrature to the statistical error
-# array of systematic errors, will just be summed in quadrature to the statistical error
 # we assume
 # - 30% on VHE gamma-ray instruments
 # - 10% on HE gamma-ray instruments
@@ -198,7 +197,7 @@ fit_check_dir = "figures/figure_6_checks_sherpa_fit"
 Path(fit_check_dir).mkdir(parents=True, exist_ok=True)
 # fit using the Levenberg-Marquardt optimiser
 fitter = Fit(sed, agnpy_ssc, stat=Chi2(), method=LevMar())
-min_x = 1e11 * u.GHz
+min_x = 1e11 * u.Hz
 max_x = 1e30 * u.Hz
 sed.notice(min_x, max_x)
 

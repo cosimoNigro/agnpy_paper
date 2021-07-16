@@ -232,12 +232,25 @@ y = sed_table["nuFnu"].to("erg cm-2 s-1")
 y_err_stat = sed_table["nuFnu_err_lo"].to("erg cm-2 s-1")
 # array of systematic errors, will just be summed in quadrature to the statistical error
 # we assume
-# - 15% on gamma-ray instruments
-# - 10% on lower waveband instruments
+# - 30% on VHE gamma-ray instruments
+# - 10% on HE gamma-ray instruments
+# - 10% on X-ray instruments
+# - 5% on lower-energy instruments
 y_err_syst = np.zeros(len(x))
-gamma = x > (0.1 * u.GeV).to("Hz", equivalencies=u.spectral())
-y_err_syst[gamma] = 0.15
-y_err_syst[~gamma] = 0.10
+# define energy ranges
+nu_vhe = (100 * u.GeV).to("Hz", equivalencies=u.spectral())
+nu_he = (0.1 * u.GeV).to("Hz", equivalencies=u.spectral())
+nu_x_ray_max = (300 * u.keV).to("Hz", equivalencies=u.spectral())
+nu_x_ray_min = (0.3 * u.keV).to("Hz", equivalencies=u.spectral())
+vhe_gamma = x >= nu_vhe
+he_gamma = (x >= nu_he) * (x < nu_vhe)
+x_ray = (x >= nu_x_ray_min) * (x < nu_x_ray_max)
+uv_to_radio = x < nu_x_ray_min
+# declare systematics
+y_err_syst[vhe_gamma] = 0.30
+y_err_syst[he_gamma] = 0.10
+y_err_syst[x_ray] = 0.10
+y_err_syst[uv_to_radio] = 0.05
 y_err_syst = y * y_err_syst
 # remove the points with orders of magnitude smaller error, they are upper limits
 UL = y_err_stat < (y * 1e-3)
@@ -303,7 +316,6 @@ agnpy_ec.R_dt.freeze()
 agnpy_ec.delta_D = delta_D
 agnpy_ec.delta_D.freeze()
 agnpy_ec.log10_B = np.log10(B.to_value("G"))
-agnpy_ec.log10_B.freeze()
 agnpy_ec.mu_s = mu_s
 agnpy_ec.mu_s.freeze()
 agnpy_ec.t_var = (t_var).to_value("s")
@@ -320,30 +332,19 @@ agnpy_ec.log10_gamma_min.freeze()
 agnpy_ec.log10_gamma_max = np.log10(3e4)
 agnpy_ec.log10_gamma_max.freeze()
 
-
-logging.info("performing the fit and estimating the error on the parameters")
+logging.info("performing the fit")
 # directory to store the checks performed on the fit
 fit_check_dir = "figures/figure_7_checks_sherpa_fit"
 Path(fit_check_dir).mkdir(parents=True, exist_ok=True)
 # fit using the Levenberg-Marquardt optimiser
 fitter = Fit(sed, agnpy_ec, stat=Chi2(), method=LevMar())
-# use confidence to estimate the errors
-fitter.estmethod = Confidence()
-fitter.estmethod.parallel = True
 min_x = 1e11 * u.Hz
 max_x = 1e30 * u.Hz
 sed.notice(min_x, max_x)
 
-logging.info("first fit iteration with only EED parameters thawed")
-results_1 = time_function_call(fitter.fit)
-print("fit succesful?", results_1.succeeded)
-print(results_1.format())
-
-logging.info("second fit iteration with EED and blob parameters thawed")
-agnpy_ec.log10_B.thaw()
-results_2 = time_function_call(fitter.fit)
-print("fit succesful?", results_2.succeeded)
-print(results_2.format())
+results = time_function_call(fitter.fit)
+print("fit succesful?", results.succeeded)
+print(results.format())
 # plot final model without components
 nu = np.logspace(10, 30, 300)
 plt.errorbar(sed.x, sed.y.value, yerr=sed.get_error().value, marker=".", ls="")
@@ -352,25 +353,6 @@ plt.xlabel(sed_x_label)
 plt.ylabel(sed_y_label)
 plt.savefig(f"{fit_check_dir}/best_fit.png")
 plt.close()
-
-logging.info(f"computing statistics profiles")
-final_stat = fitter.calc_stat()
-for par in agnpy_ec.pars:
-    if par.frozen == False:
-        logging.info(f"computing statistics profile for {par.name}")
-        proj = IntervalProjection()
-        time_function_call(proj.calc, fitter, par)
-        plt.plot(proj.x, proj.y - final_stat)
-        plt.axhline(1, ls="--", color="orange")
-        plt.xlabel(par.name)
-        plt.ylabel(r"$\Delta\chi^2$")
-        plt.savefig(f"{fit_check_dir}/chi2_profile_parameter_{par.name}.png")
-        plt.close()
-
-logging.info(f"estimating errors with confidence intervals")
-errors_2 = time_function_call(fitter.est_errors)
-print(errors_2.format())
-
 
 logging.info("plot the final model with the individual components")
 # plot the best fit model with the individual components
@@ -405,8 +387,8 @@ blob = Blob(
     gamma_size=500,
 )
 print(blob)
-print(f"jet power in particles: {blob.P_jet_e:.2f}")
-print(f"jet power in B: {blob.P_jet_B:.2f}")
+print(f"jet power in particles: {blob.P_jet_e:.2e}")
+print(f"jet power in B: {blob.P_jet_B:.2e}")
 
 # Disk and DT definition
 L_disk = 10 ** agnpy_ec.log10_L_disk.val * u.Unit("erg s-1")
