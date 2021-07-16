@@ -32,7 +32,7 @@ L_disk = 2 * 1e46 * u.Unit("erg s-1")
 # check BLR for very large distance
 # BLR definition
 xi_line = 0.024
-R_line = 1.1e17 * u.cm
+R_line = 1e17 * u.cm
 blr = SphericalShellBLR(L_disk, xi_line, "Lyalpha", R_line)
 # point source approximating the BLR
 ps_blr = PointSourceBehindJet(blr.xi_line * L_disk, blr.epsilon_line)
