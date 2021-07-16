@@ -53,12 +53,15 @@ data_file_ref_blr_in = pkg_resources.resource_filename(
 # reference SED, Figure 10 Finke Dermer
 data_ref = np.loadtxt(data_file_ref_blr_in, delimiter=",")
 nu_ref = data_ref[:, 0] * u.Hz
+# make a denser frequency grid with intermediate points in log-scale
+nu_denser = np.append(nu_ref, np.sqrt(nu_ref[1:] * nu_ref[:-1]))
+nu = np.sort(nu_denser)
 sed_ref = data_ref[:, 1] * u.Unit("erg cm-2 s-1")
 
 # recompute agnpy SEDs on the same frequency points of the reference
-sed_agnpy_blr_in = time_function_call(ec_blr_in.sed_flux, nu_ref)
-sed_agnpy_blr_out = time_function_call(ec_blr_out.sed_flux, nu_ref)
-sed_agnpy_ps_blr = time_function_call(ec_ps_blr.sed_flux, nu_ref)
+sed_agnpy_blr_in = time_function_call(ec_blr_in.sed_flux, nu)
+sed_agnpy_blr_out = time_function_call(ec_blr_out.sed_flux, nu)
+sed_agnpy_ps_blr = time_function_call(ec_ps_blr.sed_flux, nu)
 
 
 # figure
@@ -72,7 +75,7 @@ ax2 = fig.add_subplot(spec[0, 1])
 ax3 = fig.add_subplot(spec[1, 0], sharex=ax1)
 ax4 = fig.add_subplot(spec[1, 1], sharex=ax2, sharey=ax3)
 # SED inside the BLR
-ax1.loglog(nu_ref, sed_agnpy_blr_in, ls="-", lw=2, color="crimson", label="agnpy")
+ax1.loglog(nu, sed_agnpy_blr_in, ls="-", lw=2, color="crimson", label="agnpy")
 ax1.loglog(
     nu_ref, sed_ref, ls="--", lw=1.5, color="k", label="Fig. 10, Finke (2016)",
 )
@@ -84,7 +87,7 @@ ax1.set_title(
 )
 # SED outside the BLR
 ax2.loglog(
-    nu_ref,
+    nu,
     sed_agnpy_blr_out,
     ls="-",
     lw=2,
@@ -92,7 +95,7 @@ ax2.loglog(
     label="agnpy, full calculation",
 )
 ax2.loglog(
-    nu_ref,
+    nu,
     sed_agnpy_ps_blr,
     ls="--",
     lw=1.5,
@@ -105,7 +108,7 @@ ax2.set_title(
     + r"$r=1.1 \times 10^{20}\,{\rm cm} \gg R_{\rm Ly \alpha}$"
 )
 # plot the deviation from the reference in the bottom panel
-deviation_ref = sed_agnpy_blr_in / sed_ref - 1
+deviation_ref = sed_agnpy_blr_in[::2] / sed_ref - 1
 deviation_approx = sed_agnpy_blr_out / sed_agnpy_ps_blr - 1
 ax3.grid(False)
 ax3.axhline(0, ls="-", color="darkgray")
@@ -131,7 +134,7 @@ ax4.axhline(-0.3, ls=":", color="darkgray")
 ax4.set_ylim([-0.5, 0.5])
 ax4.set_yticks([-0.4, -0.2, 0.0, 0.2, 0.4])
 ax4.semilogx(
-    nu_ref,
+    nu,
     deviation_approx,
     ls="--",
     lw=1.5,
