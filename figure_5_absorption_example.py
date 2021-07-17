@@ -17,7 +17,7 @@ L_disk = 2 * 1e46 * u.Unit("erg s-1")
 # the luminosity of the shell formed only by the Lyman Alpha line is a fraction 0.1 of the disk luminosity
 xi_ly_alpha = 0.024
 L_ly_alpha = xi_ly_alpha * L_disk
-R_ly_alpha = 1e17 * u.cm
+R_ly_alpha = 1.1e17 * u.cm
 # all the shells radiuses and luminosities are given as a function of the Lybeta shell
 # obtain its radius and luminosity from the Ly alpha dictionary
 R_ly_beta = R_ly_alpha / ly_alpha_line["R_Hbeta_ratio"]

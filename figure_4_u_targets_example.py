@@ -35,7 +35,7 @@ blob = Blob(R_b, z, delta_D, Gamma, B, spectrum_norm, spectrum_dict)
 # add CMB and the photon density of the synchrotron radiation for comparison
 cmb = CMB(z=blob.z)
 disk = SSDisk(M_BH, L_disk, eta, R_tilde_in, R_tilde_out, R_g_units=True)
-blr = SphericalShellBLR(L_disk, 0.024, "Lyalpha", 1e17 * u.cm)
+blr = SphericalShellBLR(L_disk, 0.024, "Lyalpha", 1.1e17 * u.cm)
 dt = RingDustTorus(L_disk, 0.1, 1000 * u.K)
 
 # compute the energy densities at several distances
