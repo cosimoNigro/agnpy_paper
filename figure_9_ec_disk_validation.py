@@ -45,8 +45,9 @@ ps_disk_R_out = PointSourceBehindJet(L_disk, disk.epsilon(R_out))
 blob.set_gamma_size(300)
 ec_disk_near = ExternalCompton(blob, disk, r=1e17 * u.cm)
 # - far from the disk, to be compared with the point-source approximation
-blob.set_gamma_size(600)
+blob.set_gamma_size(400)
 ec_disk_far = ExternalCompton(blob, disk, r=1e21 * u.cm)
+blob.set_gamma_size(600)
 ec_disk_ps_R_in = ExternalCompton(blob, ps_disk_R_in, r=1e21 * u.cm)
 ec_disk_ps_R_out = ExternalCompton(blob, ps_disk_R_out, r=1e21 * u.cm)
 
