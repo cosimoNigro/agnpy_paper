@@ -63,7 +63,7 @@ nu_denser = np.append(nu_ref, np.sqrt(nu_ref[1:] * nu_ref[:-1]))
 nu = np.sort(nu_denser)
 sed_ref = data_ref[:, 1] * u.Unit("erg cm-2 s-1")
 
-# recompute agnpy SEDs on the same frequency points of the reference
+# compute agnpy SEDs on the denser frequency grid
 sed_agnpy_disk_near = time_function_call(ec_disk_near.sed_flux, nu)
 sed_agnpy_disk_far = time_function_call(ec_disk_far.sed_flux, nu)
 sed_agnpy_disk_R_in = time_function_call(ec_disk_ps_R_in.sed_flux, nu)
@@ -118,7 +118,8 @@ ax2.fill_between(nu, sed_agnpy_disk_R_in, sed_agnpy_disk_R_out, color="silver")
 ax2.legend(loc="best", fontsize=10)
 ax2.set_title("EC on Shakura Sunyaev disk, " + r"$r=10^{21}\,{\rm cm} \gg R_{\rm out}$")
 # plot the deviation from the reference in the bottom panel
-# remove every other value from the SED, as it has been calculated on the finer frequency grid
+# remove every other value from the SED to be compared with the reference
+# as it has been calculated on the finer frequency grid
 deviation_ref = sed_agnpy_disk_near[::2] / sed_ref - 1
 deviation_approx_in = sed_agnpy_disk_far / sed_agnpy_disk_R_in - 1
 deviation_approx_out = sed_agnpy_disk_far / sed_agnpy_disk_R_out - 1

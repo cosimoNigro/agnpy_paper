@@ -37,12 +37,12 @@ dt = RingDustTorus(L_disk, xi_dt, T_dt)
 ps_dt = PointSourceBehindJet(dt.xi_dt * L_disk, dt.epsilon_dt)
 # EC
 # - near the DT, to be compared with the reference
-blob.set_gamma_size(500)
+blob.set_gamma_size(600)
 ec_dt_near = ExternalCompton(blob, dt, r=1e18 * u.cm)
 # - far from the DT, to be compared with the point-source approximation
-blob.set_gamma_size(300)
-ec_dt_far = ExternalCompton(blob, dt, r=1e22 * u.cm)
 blob.set_gamma_size(600)
+ec_dt_far = ExternalCompton(blob, dt, r=1e22 * u.cm)
+blob.set_gamma_size(800)
 ec_ps_dt = ExternalCompton(blob, ps_dt, r=1e22 * u.cm)
 
 # reference SED, Figure 11 Finke Dermer
@@ -51,12 +51,15 @@ data_file_ref_dt_near = pkg_resources.resource_filename(
 )
 data_ref = np.loadtxt(data_file_ref_dt_near, delimiter=",")
 nu_ref = data_ref[:, 0] * u.Hz
+# make a denser frequency grid with intermediate points in log-scale
+nu_denser = np.append(nu_ref, np.sqrt(nu_ref[1:] * nu_ref[:-1]))
+nu = np.sort(nu_denser)
 sed_ref = data_ref[:, 1] * u.Unit("erg cm-2 s-1")
 
-# recompute agnpy SEDs on the same frequency points of the reference
-sed_agnpy_dt_near = time_function_call(ec_dt_near.sed_flux, nu_ref)
-sed_agnpy_dt_far = time_function_call(ec_dt_far.sed_flux, nu_ref)
-sed_agnpy_ps_dt = time_function_call(ec_ps_dt.sed_flux, nu_ref)
+# compute agnpy SEDs on the denser frequency grid
+sed_agnpy_dt_near = time_function_call(ec_dt_near.sed_flux, nu)
+sed_agnpy_dt_far = time_function_call(ec_dt_far.sed_flux, nu)
+sed_agnpy_ps_dt = time_function_call(ec_ps_dt.sed_flux, nu)
 
 
 # figure
@@ -70,7 +73,7 @@ ax2 = fig.add_subplot(spec[0, 1])
 ax3 = fig.add_subplot(spec[1, 0], sharex=ax1)
 ax4 = fig.add_subplot(spec[1, 1], sharex=ax2, sharey=ax3)
 # SED inside the BLR
-ax1.loglog(nu_ref, sed_agnpy_dt_near, ls="-", lw=2, color="crimson", label="agnpy")
+ax1.loglog(nu, sed_agnpy_dt_near, ls="-", lw=2, color="crimson", label="agnpy")
 ax1.loglog(
     nu_ref, sed_ref, ls="--", lw=1.5, color="k", label="Fig. 11, Finke (2016)",
 )
@@ -79,7 +82,7 @@ ax1.legend(loc="best", fontsize=10)
 ax1.set_title("EC on ring DT, " + r"$r=10^{18}\,{\rm cm} < R_{\rm DT}$")
 # SED outside the BLR
 ax2.loglog(
-    nu_ref,
+    nu,
     sed_agnpy_dt_far,
     ls="-",
     lw=2,
@@ -87,7 +90,7 @@ ax2.loglog(
     label="agnpy, full calculation",
 )
 ax2.loglog(
-    nu_ref,
+    nu,
     sed_agnpy_ps_dt,
     ls="--",
     lw=1.5,
@@ -97,7 +100,9 @@ ax2.loglog(
 ax2.legend(loc="best", fontsize=10)
 ax2.set_title("EC on ring DT, " + r"$r=10^{22}\,{\rm cm} \gg R_{\rm DT}$")
 # plot the deviation from the reference in the bottom panel
-deviation_ref = sed_agnpy_dt_near / sed_ref - 1
+# remove every other value from the SED to be compared with the reference
+# as it has been calculated on the finer frequency grid
+deviation_ref = sed_agnpy_dt_near[::2] / sed_ref - 1
 deviation_approx = sed_agnpy_dt_far / sed_agnpy_ps_dt - 1
 ax3.grid(False)
 ax3.axhline(0, ls="-", color="darkgray")
@@ -123,7 +128,7 @@ ax4.axhline(-0.3, ls=":", color="darkgray")
 ax4.set_ylim([-0.5, 0.5])
 ax4.set_yticks([-0.4, -0.2, 0.0, 0.2, 0.4])
 ax4.semilogx(
-    nu_ref,
+    nu,
     deviation_approx,
     ls="--",
     lw=1.5,

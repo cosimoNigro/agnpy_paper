@@ -32,18 +32,18 @@ L_disk = 2 * 1e46 * u.Unit("erg s-1")
 # check BLR for very large distance
 # BLR definition
 xi_line = 0.024
-R_line = 1e17 * u.cm
+R_line = 1.1e17 * u.cm
 blr = SphericalShellBLR(L_disk, xi_line, "Lyalpha", R_line)
 # point source approximating the BLR
 ps_blr = PointSourceBehindJet(blr.xi_line * L_disk, blr.epsilon_line)
 # EC
 # - inside the BLR, to be compared with the reference
-blob.set_gamma_size(400)
+blob.set_gamma_size(350)
 ec_blr_in = ExternalCompton(blob, blr, r=1e16 * u.cm)
 # - outside the BLR, to be compared with the point-source approximation
-blob.set_gamma_size(300)
+blob.set_gamma_size(350)
 ec_blr_out = ExternalCompton(blob, blr, r=1e20 * u.cm)
-blob.set_gamma_size(600)
+blob.set_gamma_size(700)
 ec_ps_blr = ExternalCompton(blob, ps_blr, r=1e20 * u.cm)
 
 # plot SEDs
@@ -58,7 +58,7 @@ nu_denser = np.append(nu_ref, np.sqrt(nu_ref[1:] * nu_ref[:-1]))
 nu = np.sort(nu_denser)
 sed_ref = data_ref[:, 1] * u.Unit("erg cm-2 s-1")
 
-# recompute agnpy SEDs on the same frequency points of the reference
+# compute agnpy SEDs on the denser frequency grid
 sed_agnpy_blr_in = time_function_call(ec_blr_in.sed_flux, nu)
 sed_agnpy_blr_out = time_function_call(ec_blr_out.sed_flux, nu)
 sed_agnpy_ps_blr = time_function_call(ec_ps_blr.sed_flux, nu)
@@ -108,6 +108,8 @@ ax2.set_title(
     + r"$r=1.1 \times 10^{20}\,{\rm cm} \gg R_{\rm Ly \alpha}$"
 )
 # plot the deviation from the reference in the bottom panel
+# remove every other value from the SED to be compared with the reference
+# as it has been calculated on the finer frequency grid
 deviation_ref = sed_agnpy_blr_in[::2] / sed_ref - 1
 deviation_approx = sed_agnpy_blr_out / sed_agnpy_ps_blr - 1
 ax3.grid(False)
