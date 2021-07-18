@@ -121,12 +121,25 @@ y = sed_table["nuFnu"].to("erg cm-2 s-1")
 y_err_stat = sed_table["nuFnu_err"].to("erg cm-2 s-1")
 # array of systematic errors, will just be summed in quadrature to the statistical error
 # we assume
-# - 15% on gamma-ray instruments
-# - 10% on lower waveband instruments
+# - 30% on VHE gamma-ray instruments
+# - 10% on HE gamma-ray instruments
+# - 10% on X-ray instruments
+# - 5% on lower-energy instruments
 y_err_syst = np.zeros(len(x))
-gamma = x > 0.1 * u.GeV
-y_err_syst[gamma] = 0.15
-y_err_syst[~gamma] = 0.10
+# define energy ranges
+e_vhe = 100 * u.GeV
+e_he = 0.1 * u.GeV
+e_x_ray_max = 300 * u.keV
+e_x_ray_min = 0.3 * u.keV
+vhe_gamma = x >= e_vhe
+he_gamma = (x >= e_he) * (x < e_vhe)
+x_ray = (x >= e_x_ray_min) * (x < e_x_ray_max)
+uv_to_radio = x < e_x_ray_min
+# declare systematics
+y_err_syst[vhe_gamma] = 0.30
+y_err_syst[he_gamma] = 0.10
+y_err_syst[x_ray] = 0.10
+y_err_syst[uv_to_radio] = 0.05
 y_err_syst = y * y_err_syst
 # remove the points with orders of magnitude smaller error, they are upper limits
 UL = y_err_stat < (y * 1e-3)
@@ -155,9 +168,7 @@ agnpy_ssc.d_L.quantity = d_L
 agnpy_ssc.d_L.frozen = True
 # - blob parameters
 agnpy_ssc.delta_D.quantity = 18
-agnpy_ssc.delta_D.frozen = True
 agnpy_ssc.log10_B.quantity = -1.3
-agnpy_ssc.log10_B.frozen = True
 agnpy_ssc.t_var.quantity = 1 * u.d
 agnpy_ssc.t_var.frozen = True
 # - EED
@@ -177,23 +188,14 @@ dataset_ssc = FluxPointsDataset(model, flux_points)
 E_min_fit = (1e11 * u.Hz).to("eV", equivalencies=u.spectral())
 dataset_ssc.mask_fit = dataset_ssc.data.energy_ref > E_min_fit
 
-
-logging.info("performing the fit and estimating the error on the parameters")
+logging.info("performing the fit")
 # directory to store the checks performed on the fit
 fit_check_dir = "figures/figure_6_checks_gammapy_fit"
 Path(fit_check_dir).mkdir(parents=True, exist_ok=True)
 # define the fitter
 fitter = Fit([dataset_ssc])
-logging.info("first fit iteration with only EED parameters thawed")
-result_1 = time_function_call(fitter.run, optimize_opts={"print_level": 1})
-print(result_1)
-print(agnpy_ssc.parameters.to_table())
-
-logging.info("second fit iteration with EED and blob parameters thawed")
-agnpy_ssc.delta_D.frozen = False
-agnpy_ssc.log10_B.frozen = False
-result_2 = time_function_call(fitter.run, optimize_opts={"print_level": 1})
-print(result_2)
+results = time_function_call(fitter.run, optimize_opts={"print_level": 1})
+print(results)
 print(agnpy_ssc.parameters.to_table())
 # plot best-fit model and covariance
 flux_points.plot(energy_unit="eV", energy_power=2)
@@ -203,18 +205,6 @@ plt.close()
 agnpy_ssc.covariance.plot_correlation()
 plt.savefig(f"{fit_check_dir}/correlation_matrix.png")
 plt.close()
-
-logging.info(f"computing confidence intervals")
-for par in agnpy_ssc.parameters:
-    if par.frozen is False:
-        logging.info(f"computing confidence interval for {par.name}")
-        confidence = time_function_call(
-            fitter.confidence, parameter=par, reoptimize=True
-        )
-        errn = confidence["errn"]
-        errp = confidence["errp"]
-        print(f"{par.name} = {par.value:.2f} -{errn:.2f}  +{errp:.2f}")
-
 
 logging.info("plot the final model with the individual components")
 k_e = 10 ** agnpy_ssc.log10_k_e.value * u.Unit("cm-3")
@@ -243,8 +233,8 @@ blob = Blob(
     R_b, z, delta_D, delta_D, B, k_e, spectrum_dict, spectrum_norm_type="differential"
 )
 print(blob)
-print(f"jet power in particles: {blob.P_jet_e:.2f}")
-print(f"jet power in B: {blob.P_jet_B:.2f}")
+print(f"jet power in particles: {blob.P_jet_e:.2e}")
+print(f"jet power in B: {blob.P_jet_B:.2e}")
 
 # compute the obtained emission region
 synch = Synchrotron(blob)

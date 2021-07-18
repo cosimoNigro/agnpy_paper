@@ -45,8 +45,9 @@ ps_disk_R_out = PointSourceBehindJet(L_disk, disk.epsilon(R_out))
 blob.set_gamma_size(300)
 ec_disk_near = ExternalCompton(blob, disk, r=1e17 * u.cm)
 # - far from the disk, to be compared with the point-source approximation
-blob.set_gamma_size(600)
+blob.set_gamma_size(400)
 ec_disk_far = ExternalCompton(blob, disk, r=1e21 * u.cm)
+blob.set_gamma_size(600)
 ec_disk_ps_R_in = ExternalCompton(blob, ps_disk_R_in, r=1e21 * u.cm)
 ec_disk_ps_R_out = ExternalCompton(blob, ps_disk_R_out, r=1e21 * u.cm)
 
@@ -57,13 +58,16 @@ data_file_ref_disk = pkg_resources.resource_filename(
 # reference SED, Figure 8 Finke Dermer
 data_ref = np.loadtxt(data_file_ref_disk, delimiter=",")
 nu_ref = data_ref[:, 0] * u.Hz
+# make a denser frequency grid with intermediate points in log-scale
+nu_denser = np.append(nu_ref, np.sqrt(nu_ref[1:] * nu_ref[:-1]))
+nu = np.sort(nu_denser)
 sed_ref = data_ref[:, 1] * u.Unit("erg cm-2 s-1")
 
-# recompute agnpy SEDs on the same frequency points of the reference
-sed_agnpy_disk_near = time_function_call(ec_disk_near.sed_flux, nu_ref)
-sed_agnpy_disk_far = time_function_call(ec_disk_far.sed_flux, nu_ref)
-sed_agnpy_disk_R_in = time_function_call(ec_disk_ps_R_in.sed_flux, nu_ref)
-sed_agnpy_disk_R_out = time_function_call(ec_disk_ps_R_out.sed_flux, nu_ref)
+# compute agnpy SEDs on the denser frequency grid
+sed_agnpy_disk_near = time_function_call(ec_disk_near.sed_flux, nu)
+sed_agnpy_disk_far = time_function_call(ec_disk_far.sed_flux, nu)
+sed_agnpy_disk_R_in = time_function_call(ec_disk_ps_R_in.sed_flux, nu)
+sed_agnpy_disk_R_out = time_function_call(ec_disk_ps_R_out.sed_flux, nu)
 
 
 # figure
@@ -76,17 +80,17 @@ ax1 = fig.add_subplot(spec[0, 0])
 ax2 = fig.add_subplot(spec[0, 1])
 ax3 = fig.add_subplot(spec[1, 0], sharex=ax1)
 ax4 = fig.add_subplot(spec[1, 1], sharex=ax2, sharey=ax3)
-# SED inside the BLR
-ax1.loglog(nu_ref, sed_agnpy_disk_near, ls="-", lw=2, color="crimson", label="agnpy")
+# SED close to the disk
+ax1.loglog(nu, sed_agnpy_disk_near, ls="-", lw=2, color="crimson", label="agnpy")
 ax1.loglog(
     nu_ref, sed_ref, ls="--", lw=1.5, color="k", label="Fig. 8, Finke (2016)",
 )
 ax1.set_ylabel(r"$\nu F_{\nu}\,/\,({\rm erg}\,{\rm cm}^{-2}\,{\rm s}^{-1})$")
 ax1.legend(loc="best", fontsize=10)
 ax1.set_title("EC on Shakura Sunyaev disk, " + r"$r=10^{17}\,{\rm cm} < R_{\rm out}$")
-# SED outside the BLR
+# SED far from the disk
 ax2.loglog(
-    nu_ref,
+    nu,
     sed_agnpy_disk_far,
     ls="-",
     lw=2,
@@ -94,7 +98,7 @@ ax2.loglog(
     label="agnpy, full calculation",
 )
 ax2.loglog(
-    nu_ref,
+    nu,
     sed_agnpy_disk_R_in,
     ls="--",
     lw=1.5,
@@ -102,7 +106,7 @@ ax2.loglog(
     label="agnpy, point-source approx., " + r"$\epsilon_0 = \epsilon_0(R_{\rm in})$",
 )
 ax2.loglog(
-    nu_ref,
+    nu,
     sed_agnpy_disk_R_out,
     ls=":",
     lw=1.5,
@@ -110,11 +114,13 @@ ax2.loglog(
     label="agnpy, point-source approx., " + r"$\epsilon_0 = \epsilon_0(R_{\rm out})$",
 )
 # shade the area between the two SED of the point source approximations
-ax2.fill_between(nu_ref, sed_agnpy_disk_R_in, sed_agnpy_disk_R_out, color="silver")
+ax2.fill_between(nu, sed_agnpy_disk_R_in, sed_agnpy_disk_R_out, color="silver")
 ax2.legend(loc="best", fontsize=10)
 ax2.set_title("EC on Shakura Sunyaev disk, " + r"$r=10^{21}\,{\rm cm} \gg R_{\rm out}$")
 # plot the deviation from the reference in the bottom panel
-deviation_ref = sed_agnpy_disk_near / sed_ref - 1
+# remove every other value from the SED to be compared with the reference
+# as it has been calculated on the finer frequency grid
+deviation_ref = sed_agnpy_disk_near[::2] / sed_ref - 1
 deviation_approx_in = sed_agnpy_disk_far / sed_agnpy_disk_R_in - 1
 deviation_approx_out = sed_agnpy_disk_far / sed_agnpy_disk_R_out - 1
 ax3.grid(False)
@@ -141,7 +147,7 @@ ax4.axhline(-0.3, ls=":", color="darkgray")
 ax4.set_ylim([-0.5, 0.5])
 ax4.set_yticks([-0.4, -0.2, 0.0, 0.2, 0.4])
 ax4.semilogx(
-    nu_ref,
+    nu,
     deviation_approx_in,
     ls="--",
     lw=1.5,
@@ -149,7 +155,7 @@ ax4.semilogx(
     label="point-source approx., " + r"$\epsilon_0 = \epsilon_0(R_{\rm in})$",
 )
 ax4.semilogx(
-    nu_ref,
+    nu,
     deviation_approx_out,
     ls=":",
     lw=1.5,
