@@ -8,8 +8,8 @@ from agnpy.compton import ExternalCompton
 from agnpy.utils.plot import sed_x_label, sed_y_label
 import matplotlib.pyplot as plt
 
-# agnpy 
-# - blob 
+# agnpy
+# - blob
 spectrum_norm = 6e42 * u.erg
 parameters = {
     "p1": 2.0,
@@ -33,7 +33,7 @@ blr = SphericalShellBLR(L_disk, xi_line, "Lyalpha", R_line)
 
 # jet(set) with broken power-law electron distribution
 jet = Jet(name="", electron_distribution="bkn", electron_distribution_log_values=False)
-jet.add_EC_component(["EC_BLR"], disk_type="MultiBB")
+jet.add_EC_component(["EC_BLR"])
 # - blob
 jet.set_par("N", val=blob.n_e_tot.value)
 jet.set_par("p", val=blob.n_e.p1)
@@ -49,7 +49,7 @@ jet.set_par("z_cosm", val=blob.z)
 jet.set_par("L_Disk", val=L_disk.value)
 jet.set_par("tau_BLR", val=blr.xi_line)
 jet.set_par("R_BLR_in", val=blr.R_line.value)
-jet.set_par("R_BLR_out", val=1.01 * blr.R_line.value) # very thin BLR
+jet.set_par("R_BLR_out", val=1.01 * blr.R_line.value)  # very thin BLR
 jet.electron_distribution.update()
 
 
@@ -66,16 +66,22 @@ plt.show()
 # set the same grid in frequency
 nu = np.logspace(14, 30, 100) * u.Hz
 jet.set_nu_grid(1e14, 1e30, 100)
-    
+
 # compare for different distances
-for (r, y_lims) in zip([1.1e16 * u.cm, 1.1e20 * u.cm], [[1e-22, 1e-12], [1e-28, 1e-22]]):
-    
+for (r, y_lims) in zip(
+    [1.1e16 * u.cm, 1.1e20 * u.cm], [[1e-22, 1e-12], [1e-28, 1e-22]]
+):
+
     # - agnpy EC
     ec = ExternalCompton(blob, blr, r=r)
     ec_sed_agnpy = ec.sed_flux(nu)
 
     # - jetset EC
     jet.set_par("R_H", val=r.to_value("cm"))
+    if r < blr.R_line:
+        jet.set_external_field_transf("disk")
+    else:
+        jet.set_external_field_transf("blob")
     jet.show_model()
     # evaluate and fetch the EC on disk component
     jet.eval()
@@ -83,8 +89,8 @@ for (r, y_lims) in zip([1.1e16 * u.cm, 1.1e20 * u.cm], [[1e-22, 1e-12], [1e-28, 
     nu_jetset = jet.spectral_components.EC_BLR.SED.nu
     ec_sed_jetset = jet.spectral_components.EC_BLR.SED.nuFnu
 
-    fig, ax  = plt.subplots()
-    ax.loglog(nu_jetset, ec_sed_jetset, ls="--", color="k", label="jetset")
+    fig, ax = plt.subplots()
+    ax.loglog(nu_jetset, 2 * ec_sed_jetset, ls="--", color="k", label="2 x jetset")
     ax.loglog(nu, ec_sed_agnpy, color="crimson", label="agnpy")
     ax.legend()
     ax.set_title(f"EC on BLR r={r:.2e}")
