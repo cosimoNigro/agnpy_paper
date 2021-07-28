@@ -8,8 +8,8 @@ from agnpy.compton import ExternalCompton
 from agnpy.utils.plot import sed_x_label, sed_y_label
 import matplotlib.pyplot as plt
 
-# agnpy 
-# - blob 
+# agnpy
+# - blob
 spectrum_norm = 6e42 * u.erg
 parameters = {
     "p1": 2.0,
@@ -67,10 +67,10 @@ plt.show()
 # set the same grid in frequency
 nu = np.logspace(14, 30, 100) * u.Hz
 jet.set_nu_grid(1e14, 1e30, 100)
-    
+
 # compare for different distances
 for (r, y_lims) in zip([1e18 * u.cm, 1e22 * u.cm], [[1e-24, 1e-14], [1e-31, 1e-25]]):
-    
+
     # - agnpy EC
     ec = ExternalCompton(blob, dt, r=r)
     ec_sed_agnpy = ec.sed_flux(nu)
@@ -84,8 +84,8 @@ for (r, y_lims) in zip([1e18 * u.cm, 1e22 * u.cm], [[1e-24, 1e-14], [1e-31, 1e-2
     nu_jetset = jet.spectral_components.EC_DT.SED.nu
     ec_sed_jetset = jet.spectral_components.EC_DT.SED.nuFnu
 
-    fig, ax  = plt.subplots()
-    ax.loglog(nu_jetset, 4*ec_sed_jetset, ls="--", color="k", label="4 x jetset")
+    fig, ax = plt.subplots()
+    ax.loglog(nu_jetset, 4 * ec_sed_jetset, ls="--", color="k", label="4 x jetset")
     ax.loglog(nu, ec_sed_agnpy, color="crimson", label="agnpy")
     ax.legend()
     ax.set_title(f"EC on DT r={r:.2e}")

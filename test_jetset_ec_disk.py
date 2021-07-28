@@ -8,8 +8,8 @@ from agnpy.compton import ExternalCompton
 from agnpy.utils.plot import sed_x_label, sed_y_label
 import matplotlib.pyplot as plt
 
-# agnpy 
-# - blob 
+# agnpy
+# - blob
 spectrum_norm = 6e42 * u.erg
 parameters = {
     "p1": 2.0,
@@ -69,10 +69,10 @@ plt.show()
 # set the same grid in frequency
 nu = np.logspace(14, 30, 100) * u.Hz
 jet.set_nu_grid(1e14, 1e30, 100)
-    
+
 # compare for different distances
 for (r, y_lims) in zip([1e17 * u.cm, 1e22 * u.cm], [[1e-23, 1e-13], [1e-33, 1e-24]]):
-    
+
     # - agnpy EC
     ec_disk = ExternalCompton(blob, disk, r=r)
     ec_sed_agnpy = ec_disk.sed_flux(nu)
@@ -86,7 +86,7 @@ for (r, y_lims) in zip([1e17 * u.cm, 1e22 * u.cm], [[1e-23, 1e-13], [1e-33, 1e-2
     nu_jetset = jet.spectral_components.EC_Disk.SED.nu
     ec_sed_jetset = jet.spectral_components.EC_Disk.SED.nuFnu
 
-    fig, ax  = plt.subplots()
+    fig, ax = plt.subplots()
     ax.loglog(nu_jetset, ec_sed_jetset, ls="--", color="k", label="jetset")
     ax.loglog(nu, ec_sed_agnpy, color="crimson", label="agnpy")
     ax.legend()
