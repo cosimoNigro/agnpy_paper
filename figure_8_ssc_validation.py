@@ -29,14 +29,14 @@ ssc = SynchrotronSelfCompton(blob)
 
 # reference datasets
 data_synch_jetset = pkg_resources.resource_filename(
-    "agnpy", "data/reference_seds/jetset/synch_pwl_jetset_1.1.2.txt"
+    "agnpy", "data/reference_seds/jetset/data/synch_pwl_jetset_1.1.2.txt"
 )
 data_synch_dermer = pkg_resources.resource_filename(
     "agnpy",
     "data/reference_seds/dermer_menon_2009/figure_7_4/synchrotron_gamma_max_1e5.txt",
 )
 data_ssc_jetset = pkg_resources.resource_filename(
-    "agnpy", "data/reference_seds/jetset/ssc_pwl_jetset_1.1.2.txt"
+    "agnpy", "data/reference_seds/jetset/data/ssc_pwl_jetset_1.1.2.txt"
 )
 data_ssc_dermer = pkg_resources.resource_filename(
     "agnpy", "data/reference_seds/dermer_menon_2009/figure_7_4/ssc_gamma_max_1e5.txt"
