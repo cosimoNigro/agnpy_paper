@@ -8,6 +8,10 @@ _build
 *.eggs*
 *.egg*
 
+# don't store images
+*.png
+*.pdf
+
 # vim
 *.swp*
 
