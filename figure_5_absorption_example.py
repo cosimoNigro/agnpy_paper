@@ -1,5 +1,6 @@
 import numpy as np
 import astropy.units as u
+from agnpy.emission_regions import Blob
 from agnpy.targets import lines_dictionary, SphericalShellBLR, RingDustTorus
 from agnpy.absorption import Absorption
 from agnpy.utils.plot import load_mpl_rc
@@ -41,18 +42,37 @@ print(dt)
 # distance from the central sources
 r = 1e16 * u.cm
 
+# add absorption on synchrotron photons
+# blob definition
+spectrum_norm = 6e42 * u.erg
+parameters = {
+    "p1": 2.0,
+    "p2": 3.5,
+    "gamma_b": 1e4,
+    "gamma_min": 20,
+    "gamma_max": 5e7,
+}
+spectrum_dict = {"type": "BrokenPowerLaw", "parameters": parameters}
+R_b = 1e16 * u.cm
+B = 0.56 * u.G
+z = 1
+delta_D = 40
+Gamma = 40
+blob = Blob(R_b, z, delta_D, Gamma, B, spectrum_norm, spectrum_dict)
+
 # absorptions
 abs_blr_ly_alpha = Absorption(blr_ly_alpha, r=r, z=z)
 abs_blr_H_alpha = Absorption(blr_H_alpha, r=r, z=z)
 abs_dt = Absorption(dt, r=r, z=z)
+abs_synch = Absorption(blob)
 # array of energies to compute the absorption
-E = np.logspace(0, 5) * u.GeV
-nu = E.to("Hz", equivalencies=u.spectral())
+nu = np.logspace(24, 30, 100) * u.Hz
 # opacities
 tau_blr_ly_alpha = time_function_call(abs_blr_ly_alpha.tau, nu)
 tau_blr_H_alpha = time_function_call(abs_blr_H_alpha.tau, nu)
 tau_dt = time_function_call(abs_dt.tau, nu)
-total_tau = tau_blr_ly_alpha + tau_blr_H_alpha + tau_dt
+tau_synch = time_function_call(abs_synch.tau, nu)
+tau_ext = tau_blr_ly_alpha + tau_blr_H_alpha + tau_dt
 
 # plot
 load_mpl_rc()
@@ -75,11 +95,22 @@ ax.loglog(
     color="dodgerblue",
 )
 ax.loglog(nu, tau_dt, lw=2, ls="--", label="DT", color="goldenrod")
-ax.loglog(nu, total_tau, lw=2, ls="-", label="total", color="k")
-ax.fill_between(nu, np.zeros(len(nu)), total_tau, alpha=0.5, color="darkgray", zorder=1)
-ax.legend(loc="best")
+ax.loglog(nu, tau_ext, lw=2, ls="-", label="external", color="k")
+ax.fill_between(nu, np.zeros(len(nu)), tau_ext, alpha=0.6, color="darkgray")
+ax.loglog(
+    nu,
+    1e3 * tau_synch,
+    lw=2,
+    color="lightseagreen",
+    label=r"$10^3 \times$" + " synchrotron",
+)
+ax.fill_between(
+    nu, np.zeros(len(nu)), 1e3 * tau_synch, alpha=0.6, color="lightseagreen"
+)
+ax.legend(loc="best", fontsize=11)
 ax.set_xlabel(r"$\nu\,/\,Hz$")
 ax.set_ylabel(r"$\tau_{\gamma \gamma}$")
+ax.set_ylim([1e-1, 1e3])
 Path("figures").mkdir(exist_ok=True)
 fig.savefig("figures/figure_5.pdf")
 fig.savefig("figures/figure_5.png")
