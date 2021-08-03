@@ -114,5 +114,5 @@ for r in [1.1e16 * u.cm, 1.1e20 * u.cm]:
     ax.set_ylabel(sed_y_label)
     plt.show()
     fig.savefig(
-        f"jetset_ec_blr_comparison_r_{r.value:.1e}_Gamma_{blob.Gamma}_theta_s_{blob.theta_s.value}_cm.png"
+        f"jetset_ec_blr_comparison_r_{r.value:.1e}_cm_Gamma_{blob.Gamma}_theta_s_{blob.theta_s.value}_cm.png"
     )

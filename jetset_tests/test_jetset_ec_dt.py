@@ -25,6 +25,9 @@ z = 1
 delta_D = 40
 Gamma = 40
 blob = Blob(R_b, z, delta_D, Gamma, B, spectrum_norm, spectrum_dict)
+# change the boost to have a very small viewing angle
+blob.set_delta_D(Gamma=20, theta_s=0.05 * u.deg)
+print(blob)
 blob.set_gamma_size(600)
 # - DT
 L_disk = 2 * 1e46 * u.Unit("erg s-1")
@@ -33,7 +36,12 @@ xi_dt = 0.1
 dt = RingDustTorus(L_disk, xi_dt, T_dt)
 
 # jet(set) with broken power-law electron distribution
-jet = Jet(name="", electron_distribution="bkn", electron_distribution_log_values=False)
+jet = Jet(
+    name="",
+    electron_distribution="bkn",
+    electron_distribution_log_values=False,
+    beaming_expr="bulk_theta",
+)
 jet.add_EC_component(["EC_DT"])
 # - blob
 jet.set_par("N", val=blob.n_e_tot.value)
@@ -44,7 +52,8 @@ jet.set_par("gmin", val=blob.n_e.gamma_min)
 jet.set_par("gmax", val=blob.n_e.gamma_max)
 jet.set_par("R", val=blob.R_b.value)
 jet.set_par("B", val=blob.B.value)
-jet.set_par("beam_obj", val=blob.Gamma)
+jet.set_par("BulkFactor", val=blob.Gamma)
+jet.set_par("theta", val=blob.theta_s.value)
 jet.set_par("z_cosm", val=blob.z)
 # - disk
 jet.set_par("L_Disk", val=L_disk.value)
@@ -69,7 +78,7 @@ nu = np.logspace(14, 30, 100) * u.Hz
 jet.set_nu_grid(1e14, 1e30, 100)
 
 # compare for different distances
-for (r, y_lims) in zip([1e18 * u.cm, 1e22 * u.cm], [[1e-24, 1e-14], [1e-31, 1e-25]]):
+for r in [1e18 * u.cm, 1e22 * u.cm]:
 
     # - agnpy EC
     ec = ExternalCompton(blob, dt, r=r)
@@ -83,14 +92,23 @@ for (r, y_lims) in zip([1e18 * u.cm, 1e22 * u.cm], [[1e-24, 1e-14], [1e-31, 1e-2
 
     nu_jetset = jet.spectral_components.EC_DT.SED.nu
     ec_sed_jetset = jet.spectral_components.EC_DT.SED.nuFnu
+    # eliminate extremly low values
+    null_values = ec_sed_jetset.value < 1e-50
 
     fig, ax = plt.subplots()
-    ax.loglog(nu_jetset, 4 * ec_sed_jetset, ls="--", color="k", label="4 x jetset")
+    ax.loglog(
+        nu_jetset[~null_values],
+        4 * ec_sed_jetset[~null_values],
+        ls="--",
+        color="k",
+        label="4 x jetset",
+    )
     ax.loglog(nu, ec_sed_agnpy, color="crimson", label="agnpy")
     ax.legend()
-    ax.set_title(f"EC on DT r={r:.2e}")
-    ax.set_ylim(y_lims)
+    ax.set_title(f"EC on DT \n r={r:.1e}, Gamma={blob.Gamma}, theta_s={blob.theta_s}")
     ax.set_xlabel(sed_x_label)
     ax.set_ylabel(sed_y_label)
     plt.show()
-    fig.savefig(f"jetset_ec_dt_comparison_r_{r.value:.2e}_cm.png")
+    fig.savefig(
+        f"jetset_ec_dt_comparison_r_{r.value:.1e}_cm_Gamma_{blob.Gamma}_theta_s_{blob.theta_s.value}_cm.png"
+    )
