@@ -1,11 +1,11 @@
 # script to study the effect of the integration grid on the final SED resolution
+import sys
 import numpy as np
 import astropy.units as u
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 from agnpy.emission_regions import Blob
 from agnpy.targets import RingDustTorus
-from agnpy.synchrotron import Synchrotron
 from agnpy.compton import ExternalCompton
 from agnpy.utils.plot import load_mpl_rc, sed_x_label, sed_y_label
 from pathlib import Path
@@ -97,7 +97,6 @@ for sed, label, color in zip(
 ax2.loglog(
     nu, seds_variable_phi[-1], ls="--", color=colors[-1], label=labels_variable_phi[-1]
 )
-ax2.set_ylabel(sed_y_label)
 ax2.legend(loc="best", fontsize=10)
 ax2.set_title("EC on ring DT, " + r"$r=10^{19}\,{\rm cm}$")
 # plot the deviation from the denser SED in the bottom panel
