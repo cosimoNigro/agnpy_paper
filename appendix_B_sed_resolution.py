@@ -9,6 +9,7 @@ from agnpy.targets import RingDustTorus
 from agnpy.compton import ExternalCompton
 from agnpy.utils.plot import load_mpl_rc, sed_x_label, sed_y_label
 from pathlib import Path
+from utils import logging
 
 # blob
 spectrum_norm = 6e42 * u.erg
@@ -37,16 +38,17 @@ n_gamma_list = [100, 200, 300, 400, 500]
 n_phi_list = [50, 100, 200, 300, 400]
 colors = ["crimson", "dodgerblue", "goldenrod", "lightseagreen", "k"]
 # same frequency grid
-nu = np.logspace(15, 29, 100) * u.Hz
+nu = np.logspace(15, 29, 50) * u.Hz
 
 # show the effect of changing the Lorentz factor and frequency grid
 seds_variable_gamma = []
 labels_variable_gamma = []
 for n_gamma in n_gamma_list:
+    logging.info(f"computing SED with {n_gamma} Lorentz factor points")
     blob.set_gamma_size(n_gamma)
     ec = ExternalCompton(blob, dt, r=1e21 * u.cm)
     sed = ec.sed_flux(nu)
-    label = r"$n_{\gamma}=$" + f"{n_gamma}, " + r"$n_{\nu}=100,\,n_{\phi}=50$"
+    label = r"$n_{\gamma}=$" + f"{n_gamma}, " + r"$n_{\phi}=50,\,n_{\nu}=100$"
     seds_variable_gamma.append(sed)
     labels_variable_gamma.append(label)
 
@@ -54,11 +56,12 @@ for n_gamma in n_gamma_list:
 seds_variable_phi = []
 labels_variable_phi = []
 for n_phi in n_phi_list:
+    logging.info(f"computing SED with {n_phi} azimuth points")
     blob.set_gamma_size(500)
     ec = ExternalCompton(blob, dt, r=1e21 * u.cm)
     ec.set_phi(n_phi)
     sed = ec.sed_flux(nu)
-    label = r"$n_{\gamma}=500,\,n_{\nu}=100,\,n_{\phi}=$" + f"{n_phi}"
+    label = r"$n_{\gamma}=500,\,n_{\phi}=$" + f"{n_phi}" + r"$,\,n_{\nu}=100$"
     seds_variable_phi.append(sed)
     labels_variable_phi.append(label)
 

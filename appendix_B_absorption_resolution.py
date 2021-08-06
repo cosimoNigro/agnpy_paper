@@ -8,6 +8,7 @@ from agnpy.targets import SphericalShellBLR
 from agnpy.absorption import Absorption
 from agnpy.utils.plot import load_mpl_rc, sed_x_label, sed_y_label
 from pathlib import Path
+from utils import logging
 
 # BLR definition
 L_disk = 2 * 1e46 * u.Unit("erg s-1")
@@ -20,16 +21,17 @@ n_mu_list = [50, 100, 200, 300, 400]
 n_phi_list = [50, 100, 200, 300, 400]
 colors = ["crimson", "dodgerblue", "goldenrod", "lightseagreen", "k"]
 # same frequency grid
-nu = np.logspace(15, 29, 100) * u.Hz
+nu = np.logspace(26, 30, 100) * u.Hz
 
 # show the effect of changing the Lorentz factor and frequency grid
 taus_variable_mu = []
 labels_variable_mu = []
 for n_mu in n_mu_list:
+    logging.info(f"computing absorption with {n_mu} cos(zenith) points")
     abs = Absorption(blr, r=1e18 * u.cm, z=1)
     abs.set_mu(n_mu)
     tau = abs.tau(nu)
-    label = r"$n_{\mu}=$" + f"{n_mu}, " + r"$n_{\phi}=50,\,n_{\r}=50,\,n_{\nu}=100$"
+    label = r"$n_{\mu}=$" + f"{n_mu}, " + r"$n_{\phi}=50,\,n_{r}=50,\,n_{\nu}=100$"
     taus_variable_mu.append(tau)
     labels_variable_mu.append(label)
 
@@ -37,12 +39,13 @@ for n_mu in n_mu_list:
 taus_variable_phi = []
 labels_variable_phi = []
 for n_phi in n_phi_list:
+    logging.info(f"computing absorption with {n_phi} azimuth points")
     abs = Absorption(blr, r=1e18 * u.cm, z=1)
     abs.set_phi(n_phi)
     tau = abs.tau(nu)
-    label = r"$n_{\mu}=100,\,n_{\phi}=" + f"{n_phi}" + r"$,\,n_{\r}=50,\,n_{\nu}=100$"
-    taus_variable_mu.append(tau)
-    labels_variable_mu.append(label)
+    label = r"$n_{\mu}=100,\,n_{\phi}=$" + f"{n_phi}" + r"$,\,n_{r}=50,\,n_{\nu}=100$"
+    taus_variable_phi.append(tau)
+    labels_variable_phi.append(label)
 
 # figure
 load_mpl_rc()
@@ -80,7 +83,7 @@ ax2.loglog(
     nu, taus_variable_phi[-1], ls="--", color=colors[-1], label=labels_variable_phi[-1]
 )
 ax2.legend(loc="best", fontsize=10)
-ax2.set_title("EC on ring DT, " + r"$r=10^{21}\,{\rm cm}$")
+ax2.set_title("EC on ring DT, " + r"$r=10^{18}\,{\rm cm}$")
 # plot the deviation from the denser SED in the bottom panel
 for sed, label, color in zip(
     taus_variable_phi[:-1], taus_variable_phi[:-1], colors[:-1]
