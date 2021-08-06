@@ -35,7 +35,12 @@ R_out = 200
 disk = SSDisk(M_BH, L_disk, eta, R_in, R_out, R_g_units=True)
 
 # jet(set) with broken power-law electron distribution
-jet = Jet(name="", electron_distribution="bkn", electron_distribution_log_values=False)
+jet = Jet(
+    name="",
+    electron_distribution="bkn",
+    electron_distribution_log_values=False,
+    beaming_expr="bulk_theta",
+)
 jet.add_EC_component(["EC_Disk"], disk_type="MultiBB")
 # - blob
 jet.set_par("N", val=blob.n_e_tot.value)
@@ -46,7 +51,8 @@ jet.set_par("gmin", val=blob.n_e.gamma_min)
 jet.set_par("gmax", val=blob.n_e.gamma_max)
 jet.set_par("R", val=blob.R_b.value)
 jet.set_par("B", val=blob.B.value)
-jet.set_par("beam_obj", val=blob.Gamma)
+jet.set_par("BulkFactor", val=blob.Gamma)
+jet.set_par("theta", val=blob.theta_s.value)
 jet.set_par("z_cosm", val=blob.z)
 # - disk
 jet.set_par("L_Disk", val=L_disk.value)
@@ -71,28 +77,44 @@ nu = np.logspace(14, 30, 100) * u.Hz
 jet.set_nu_grid(1e14, 1e30, 100)
 
 # compare for different distances
-for (r, y_lims) in zip([1e17 * u.cm, 1e22 * u.cm], [[1e-23, 1e-13], [1e-33, 1e-24]]):
-
-    # - agnpy EC
-    ec_disk = ExternalCompton(blob, disk, r=r)
-    ec_sed_agnpy = ec_disk.sed_flux(nu)
-
-    # - jetset EC
-    jet.set_par("R_H", val=r.to_value("cm"))
-    jet.show_model()
-    # evaluate and fetch the EC on disk component
-    jet.eval()
-
-    nu_jetset = jet.spectral_components.EC_Disk.SED.nu
-    ec_sed_jetset = jet.spectral_components.EC_Disk.SED.nuFnu
-
-    fig, ax = plt.subplots()
-    ax.loglog(nu_jetset, ec_sed_jetset, ls="--", color="k", label="jetset")
-    ax.loglog(nu, ec_sed_agnpy, color="crimson", label="agnpy")
-    ax.legend()
-    ax.set_title(f"EC on SSDisk r={r:.2e}")
-    ax.set_ylim(y_lims)
-    ax.set_xlabel(sed_x_label)
-    ax.set_ylabel(sed_y_label)
-    plt.show()
-    fig.savefig(f"jetset_ec_disk_comparison_r_{r.value:.2e}_cm.png")
+fig, ax = plt.subplots(2, 4, figsize=(12, 8), sharex=True, sharey=True, tight_layout=True)
+for i, transformation in enumerate(["disk", "blob"]):
+    for j, _r in enumerate([0.1, 1.1, 10, 100]):
+        r = _r * disk.R_out
+        # - agnpy EC
+        ec = ExternalCompton(blob, disk, r=r)
+        ec_sed_agnpy = ec.sed_flux(nu)
+        # - jetset EC
+        jet.set_par("R_H", val=r.to_value("cm"))
+        jet.set_external_field_transf(transformation)
+        jet.show_model()
+        # evaluate and fetch the EC on disk component
+        jet.eval()
+        # fetch nu and nuFnu from jetset
+        nu_jetset = jet.spectral_components.EC_Disk.SED.nu
+        ec_sed_jetset = jet.spectral_components.EC_Disk.SED.nuFnu
+        # eliminate extremly low values
+        null_values = ec_sed_jetset.value < 1e-50
+        ax[i][j].loglog(
+            nu_jetset[~null_values],
+            ec_sed_jetset[~null_values],
+            ls="--",
+            color="k",
+            label="jetset",
+        )
+        ax[i][j].loglog(nu, ec_sed_agnpy, color="crimson", label="agnpy")
+        ax[i][j].legend()
+        ax[i][j].set_ylim([1e-23, 1e-8])
+        text = f"frame = {transformation}\n" + r"$r = $" + f"{_r}" + r"$\times R_{\rm out}$"
+        ax[i][j].text(1e20, 8e-23, text, bbox=dict(boxstyle="round", fc="w", alpha=0.5))
+        ax[i][j].grid(ls=":") 
+# set labels
+ax[1][0].set_xlabel(sed_x_label)
+ax[1][1].set_xlabel(sed_x_label)
+ax[1][2].set_xlabel(sed_x_label)
+ax[1][3].set_xlabel(sed_x_label)
+ax[0][0].set_ylabel(sed_y_label)
+ax[1][0].set_ylabel(sed_y_label)
+fig.suptitle("EC on Disk")
+fig.savefig(f"jetset_ec_disk_comparisons.png")
+fig.savefig(f"jetset_ec_disk_comparisons.pdf")

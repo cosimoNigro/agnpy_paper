@@ -78,37 +78,44 @@ nu = np.logspace(14, 30, 100) * u.Hz
 jet.set_nu_grid(1e14, 1e30, 100)
 
 # compare for different distances
-for r in [1e18 * u.cm, 1e22 * u.cm]:
-
-    # - agnpy EC
-    ec = ExternalCompton(blob, dt, r=r)
-    ec_sed_agnpy = ec.sed_flux(nu)
-
-    # - jetset EC
-    jet.set_par("R_H", val=r.to_value("cm"))
-    jet.show_model()
-    # evaluate and fetch the EC on disk component
-    jet.eval()
-
-    nu_jetset = jet.spectral_components.EC_DT.SED.nu
-    ec_sed_jetset = jet.spectral_components.EC_DT.SED.nuFnu
-    # eliminate extremly low values
-    null_values = ec_sed_jetset.value < 1e-50
-
-    fig, ax = plt.subplots()
-    ax.loglog(
-        nu_jetset[~null_values],
-        4 * ec_sed_jetset[~null_values],
-        ls="--",
-        color="k",
-        label="4 x jetset",
-    )
-    ax.loglog(nu, ec_sed_agnpy, color="crimson", label="agnpy")
-    ax.legend()
-    ax.set_title(f"EC on DT \n r={r:.1e}, Gamma={blob.Gamma}, theta_s={blob.theta_s}")
-    ax.set_xlabel(sed_x_label)
-    ax.set_ylabel(sed_y_label)
-    plt.show()
-    fig.savefig(
-        f"jetset_ec_dt_comparison_r_{r.value:.1e}_cm_Gamma_{blob.Gamma}_theta_s_{blob.theta_s.value}_cm.png"
-    )
+fig, ax = plt.subplots(2, 4, figsize=(12, 8), sharex=True, sharey=True, tight_layout=True)
+for i, transformation in enumerate(["disk", "blob"]):
+    for j, _r in enumerate([0.1, 1.1, 10, 100]):
+        r = _r * dt.R_dt
+        # - agnpy EC
+        ec = ExternalCompton(blob, dt, r=r)
+        ec_sed_agnpy = ec.sed_flux(nu)
+        # - jetset EC
+        jet.set_par("R_H", val=r.to_value("cm"))
+        jet.set_external_field_transf(transformation)
+        jet.show_model()
+        # evaluate and fetch the EC on disk component
+        jet.eval()
+        # fetch nu and nuFnu from jetset
+        nu_jetset = jet.spectral_components.EC_DT.SED.nu
+        ec_sed_jetset = jet.spectral_components.EC_DT.SED.nuFnu
+        # eliminate extremly low values
+        null_values = ec_sed_jetset.value < 1e-50
+        ax[i][j].loglog(
+            nu_jetset[~null_values],
+            ec_sed_jetset[~null_values],
+            ls="--",
+            color="k",
+            label="jetset",
+        )
+        ax[i][j].loglog(nu, ec_sed_agnpy, color="crimson", label="agnpy")
+        ax[i][j].legend()
+        ax[i][j].set_ylim([1e-30, 1e-14])
+        text = f"frame = {transformation}\n" + r"$r = $" + f"{_r}" + r"$\times R_{\rm DT}$"
+        ax[i][j].text(1e20, 6e-30, text, bbox=dict(boxstyle="round", fc="w", alpha=0.5))
+        ax[i][j].grid(ls=":") 
+# set labels
+ax[1][0].set_xlabel(sed_x_label)
+ax[1][1].set_xlabel(sed_x_label)
+ax[1][2].set_xlabel(sed_x_label)
+ax[1][3].set_xlabel(sed_x_label)
+ax[0][0].set_ylabel(sed_y_label)
+ax[1][0].set_ylabel(sed_y_label)
+fig.suptitle("EC on DT")
+fig.savefig(f"jetset_ec_dt_comparisons.png")
+fig.savefig(f"jetset_ec_dt_comparisons.pdf")
