@@ -77,7 +77,9 @@ nu = np.logspace(14, 30, 100) * u.Hz
 jet.set_nu_grid(1e14, 1e30, 100)
 
 # compare for different distances
-fig, ax = plt.subplots(2, 4, figsize=(12, 8), sharex=True, sharey=True, tight_layout=True)
+fig, ax = plt.subplots(
+    2, 4, figsize=(12, 8), sharex=True, sharey=True, tight_layout=True
+)
 for i, transformation in enumerate(["disk", "blob"]):
     for j, _r in enumerate([0.1, 1.1, 10, 100]):
         r = _r * disk.R_out
@@ -105,9 +107,14 @@ for i, transformation in enumerate(["disk", "blob"]):
         ax[i][j].loglog(nu, ec_sed_agnpy, color="crimson", label="agnpy")
         ax[i][j].legend()
         ax[i][j].set_ylim([1e-23, 1e-8])
-        text = f"frame = {transformation}\n" + r"$r = $" + f"{_r}" + r"$\times R_{\rm out}$"
+        text = (
+            f"frame = {transformation}\n"
+            + r"$r = $"
+            + f"{_r}"
+            + r"$\times R_{\rm out}$"
+        )
         ax[i][j].text(1e20, 8e-23, text, bbox=dict(boxstyle="round", fc="w", alpha=0.5))
-        ax[i][j].grid(ls=":") 
+        ax[i][j].grid(ls=":")
 # set labels
 ax[1][0].set_xlabel(sed_x_label)
 ax[1][1].set_xlabel(sed_x_label)
