@@ -182,18 +182,18 @@ SPECTRAL_MODEL_REGISTRY.append(AgnpyEC)
 
 logging.info("reading PKS1510-089 SED from agnpy datas")
 sed_path = pkg_resources.resource_filename(
-    "agnpy", "data/mwl_seds/PKS1510-089_2015.ecsv"
+    "agnpy", "data/mwl_seds/PKS1510-089_2015b.ecsv"
 )
-sed_table = Table.read(sed_path)
-x = sed_table["E"].to("eV")
-y = sed_table["nuFnu"].to("erg cm-2 s-1")
-y_err_stat = sed_table["nuFnu_err_lo"].to("erg cm-2 s-1")
+flux_points = FluxPoints.read(sed_path)
 # array of systematic errors, will just be summed in quadrature to the statistical error
 # we assume
 # - 30% on VHE gamma-ray instruments
 # - 10% on HE gamma-ray instruments
 # - 10% on X-ray instruments
 # - 5% on lower-energy instruments
+x = flux_points.table["e_ref"]
+y = flux_points.table["e2dnde"]
+y_err_stat = flux_points.table["e2dnde_errn"]
 y_err_syst = np.zeros(len(x))
 # define energy ranges
 e_vhe = 100 * u.GeV
@@ -210,19 +210,8 @@ y_err_syst[he_gamma] = 0.10
 y_err_syst[x_ray] = 0.10
 y_err_syst[uv_to_radio] = 0.05
 y_err_syst = y * y_err_syst
-# remove the points with orders of magnitude smaller error, they are upper limits
-UL = y_err_stat < (y * 1e-3)
-x = x[~UL]
-y = y[~UL]
-y_err_stat = y_err_stat[~UL]
-y_err_syst = y_err_syst[~UL]
-# store in a Table readable by gammapy's FluxPoints
-flux_points_table = Table()
-flux_points_table["e_ref"] = x
-flux_points_table["e2dnde"] = y
-flux_points_table["e2dnde_err"] = np.sqrt(y_err_stat ** 2 + y_err_syst ** 2)
-flux_points_table.meta["SED_TYPE"] = "e2dnde"
-flux_points = FluxPoints(flux_points_table)
+# sum in quadrature the errors
+flux_points.table["e2dnde_err"] = np.sqrt(y_err_stat ** 2 + y_err_syst ** 2)
 flux_points = flux_points.to_sed_type("dnde")
 
 # declare a model
@@ -254,7 +243,7 @@ r = 6e17 * u.cm
 # instance of the model wrapping angpy functionalities
 # - AGN parameters
 # -- distances
-agnpy_ec.z.quanity = z
+agnpy_ec.z.quantity = z
 agnpy_ec.z.frozen = True
 agnpy_ec.d_L.quantity = d_L.cgs.value
 agnpy_ec.d_L.frozen = True
@@ -391,14 +380,6 @@ ax.loglog(
 )
 ax.loglog(
     nu / (1 + z),
-    ec_dt_sed,
-    ls="--",
-    lw=1.3,
-    color="dodgerblue",
-    label="agnpy, EC on DT",
-)
-ax.loglog(
-    nu / (1 + z),
     synch_sed,
     ls="--",
     lw=1.3,
@@ -406,7 +387,15 @@ ax.loglog(
     label="agnpy, synchrotron",
 )
 ax.loglog(
-    nu / (1 + z), ssc_sed, ls="--", lw=1.3, color="lightseagreen", label="agnpy, SSC"
+    nu / (1 + z), ssc_sed, ls="--", lw=1.3, color="dodgerblue", label="agnpy, SSC"
+)
+ax.loglog(
+    nu / (1 + z),
+    ec_dt_sed,
+    ls="--",
+    lw=1.3,
+    color="lightseagreen",
+    label="agnpy, EC on DT",
 )
 ax.loglog(
     nu / (1 + z),
@@ -427,8 +416,8 @@ ax.loglog(
 # systematics error in gray
 ax.errorbar(
     x.to("Hz", equivalencies=u.spectral()).value,
-    y.value,
-    yerr=y_err_syst.value,
+    y,
+    yerr=y_err_syst,
     marker=",",
     ls="",
     color="gray",
@@ -437,8 +426,8 @@ ax.errorbar(
 # statistics error in black
 ax.errorbar(
     x.to("Hz", equivalencies=u.spectral()).value,
-    y.value,
-    yerr=y_err_stat.value,
+    y,
+    yerr=y_err_stat,
     marker=".",
     ls="",
     color="k",

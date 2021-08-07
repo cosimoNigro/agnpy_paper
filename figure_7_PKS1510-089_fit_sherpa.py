@@ -415,14 +415,6 @@ ax.loglog(
 )
 ax.loglog(
     nu / (1 + z),
-    ec_dt_sed,
-    ls="--",
-    lw=1.3,
-    color="dodgerblue",
-    label="agnpy, EC on DT",
-)
-ax.loglog(
-    nu / (1 + z),
     synch_sed,
     ls="--",
     lw=1.3,
@@ -430,7 +422,15 @@ ax.loglog(
     label="agnpy, synchrotron",
 )
 ax.loglog(
-    nu / (1 + z), ssc_sed, ls="--", lw=1.3, color="lightseagreen", label="agnpy, SSC"
+    nu / (1 + z), ssc_sed, ls="--", lw=1.3, color="dodgerblue", label="agnpy, SSC"
+)
+ax.loglog(
+    nu / (1 + z),
+    ec_dt_sed,
+    ls="--",
+    lw=1.3,
+    color="lightseagreen",
+    label="agnpy, EC on DT",
 )
 ax.loglog(
     nu / (1 + z),
@@ -470,5 +470,5 @@ ax.legend(
     loc="upper center", fontsize=10, ncol=2,
 )
 plt.show()
-fig.savefig("figures/figure_7_gammapy_fit.png")
-fig.savefig("figures/figure_7_gammapy_fit.pdf")
+fig.savefig("figures/figure_7_sherpa_fit.png")
+fig.savefig("figures/figure_7_sherpa_fit.pdf")
