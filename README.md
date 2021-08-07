@@ -1,6 +1,7 @@
-## `agnpy`: Modelling the Radiative Processes of Jetted Active Galactic Nuclei with Python
+## `agnpy`: an open-source python package modelling the radiative processes of jetted active galactic nuclei
 
-This repository contains the scripts to generate the figures included in the paper "`agnpy`: Modelling the Radiative Processes of Jetted Active Galactic Nuclei with Python".
+This repository contains the scripts to generate the figures included in the paper 
+"`agnpy`: an open-source python package modelling the radiative processes of jetted active galactic nuclei".
 
 TODO: create a zenodo entry for these scripts
 
@@ -21,12 +22,16 @@ The repository contains the following files
 ├── figure_9_ec_disk_validation.py
 ├── figure_10_ec_blr_validation.py
 ├── figure_11_ec_dt_validation.py
-├── figure_12_tau_blr_validation.py
-├── figure_13_tau_dt_validation.py
+├── figure_12_ec_cmb_validation.py
+├── figure_13_tau_blr_validation.py
+├── figure_14_tau_dt_validation.py
+├── appendix_B_absorption_resolution.py
+├── appendix_B_sed_resolution.py
 ├── README.md
 └── utils.py
 
 ```
+
 ### scripts
 Each python script is named after the figure it produces in the paper, followed by a brief description of the computation performed.
 Figure 6 and 7, representing the fit of two blazars multi-wavelength SEDs, can be produced either using sherpa or gammapy fitting routines.
