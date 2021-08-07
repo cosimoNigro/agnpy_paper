@@ -3,8 +3,6 @@
 This repository contains the scripts to generate the figures included in the paper 
 "`agnpy`: an open-source python package modelling the radiative processes of jetted active galactic nuclei".
 
-TODO: create a zenodo entry for these scripts
-
 ## content of the repository
 The repository contains the following files
 ```
