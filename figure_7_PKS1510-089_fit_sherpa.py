@@ -224,12 +224,12 @@ class AgnpyEC(model.RegriddableModel1D):
 
 logging.info("reading PKS1510-089 SED from agnpy datas")
 sed_path = pkg_resources.resource_filename(
-    "agnpy", "data/mwl_seds/PKS1510-089_2015.ecsv"
+    "agnpy", "data/mwl_seds/PKS1510-089_2015b.ecsv"
 )
 sed_table = Table.read(sed_path)
-x = sed_table["E"].to("Hz", equivalencies=u.spectral())
-y = sed_table["nuFnu"].to("erg cm-2 s-1")
-y_err_stat = sed_table["nuFnu_err_lo"].to("erg cm-2 s-1")
+x = sed_table["e_ref"].to("Hz", equivalencies=u.spectral())
+y = sed_table["e2dnde"]
+y_err_stat = sed_table["e2dnde_errn"]
 # array of systematic errors, will just be summed in quadrature to the statistical error
 # we assume
 # - 30% on VHE gamma-ray instruments
@@ -252,12 +252,6 @@ y_err_syst[he_gamma] = 0.10
 y_err_syst[x_ray] = 0.10
 y_err_syst[uv_to_radio] = 0.05
 y_err_syst = y * y_err_syst
-# remove the points with orders of magnitude smaller error, they are upper limits
-UL = y_err_stat < (y * 1e-3)
-x = x[~UL]
-y = y[~UL]
-y_err_stat = y_err_stat[~UL]
-y_err_syst = y_err_syst[~UL]
 # define the data1D object containing it
 sed = data.Data1D("sed", x, y, staterror=y_err_stat, syserror=y_err_syst)
 
@@ -347,7 +341,7 @@ print("fit succesful?", results.succeeded)
 print(results.format())
 # plot final model without components
 nu = np.logspace(10, 30, 300)
-plt.errorbar(sed.x, sed.y.value, yerr=sed.get_error().value, marker=".", ls="")
+plt.errorbar(sed.x, sed.y, yerr=sed.get_error(), marker=".", ls="")
 plt.loglog(nu, agnpy_ec(nu))
 plt.xlabel(sed_x_label)
 plt.ylabel(sed_y_label)
@@ -456,19 +450,13 @@ ax.loglog(
 )
 # systematics error in gray
 ax.errorbar(
-    x.to("Hz", equivalencies=u.spectral()).value,
-    y.value,
-    yerr=y_err_syst.value,
-    marker=",",
-    ls="",
-    color="gray",
-    label="",
+    sed.x, sed.y, yerr=sed.get_syserror(), marker=",", ls="", color="gray",
 )
 # statistics error in black
 ax.errorbar(
-    x.to("Hz", equivalencies=u.spectral()).value,
-    y.value,
-    yerr=y_err_stat.value,
+    sed.x,
+    sed.y,
+    yerr=sed.get_staterror(),
     marker=".",
     ls="",
     color="k",

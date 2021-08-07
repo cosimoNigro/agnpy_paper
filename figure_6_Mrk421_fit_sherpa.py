@@ -128,11 +128,12 @@ class AgnpySSC(model.RegriddableModel1D):
 
 
 logging.info("reading Mrk421 SED from agnpy datas")
+# read the 1D data
 sed_path = pkg_resources.resource_filename("agnpy", "data/mwl_seds/Mrk421_2011.ecsv")
 sed_table = Table.read(sed_path)
-x = sed_table["nu"]
-y = sed_table["nuFnu"]
-y_err_stat = sed_table["nuFnu_err"]
+x = sed_table["e_ref"].to("Hz", equivalencies=u.spectral())
+y = sed_table["e2dnde"]
+y_err_stat = sed_table["e2dnde_err"]
 # array of systematic errors, will just be summed in quadrature to the statistical error
 # we assume
 # - 30% on VHE gamma-ray instruments
@@ -155,12 +156,6 @@ y_err_syst[he_gamma] = 0.10
 y_err_syst[x_ray] = 0.10
 y_err_syst[uv_to_radio] = 0.05
 y_err_syst = y * y_err_syst
-# remove the points with orders of magnitude smaller error, they are upper limits
-UL = y_err_stat < (y * 1e-3)
-x = x[~UL]
-y = y[~UL]
-y_err_stat = y_err_stat[~UL]
-y_err_syst = y_err_syst[~UL]
 # define the data1D object containing it
 sed = data.Data1D("sed", x, y, staterror=y_err_stat, syserror=y_err_syst)
 
@@ -272,7 +267,7 @@ ax.loglog(
 ax.errorbar(
     sed.x, sed.y, yerr=sed.get_syserror(), marker=",", ls="", color="gray",
 )
-# statistics error in gray
+# statistics error in black
 ax.errorbar(
     sed.x,
     sed.y,
