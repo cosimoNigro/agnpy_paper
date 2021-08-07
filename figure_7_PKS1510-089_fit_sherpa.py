@@ -469,6 +469,6 @@ ax.set_ylim([10 ** (-13.5), 10 ** (-7.5)])
 ax.legend(
     loc="upper center", fontsize=10, ncol=2,
 )
-plt.show()
+Path("figures").mkdir(exist_ok=True)
 fig.savefig("figures/figure_7_sherpa_fit.png")
 fig.savefig("figures/figure_7_sherpa_fit.pdf")
