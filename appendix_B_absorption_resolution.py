@@ -64,11 +64,7 @@ for sed, label, color in zip(
     ax1.loglog(nu, sed, ls="-", color=color, label=label)
 # plot the last one as reference
 ax1.loglog(
-    nu,
-    taus_variable_mu[-1],
-    ls="--",
-    color=colors[-1],
-    label=labels_variable_mu[-1],
+    nu, taus_variable_mu[-1], ls="--", color=colors[-1], label=labels_variable_mu[-1],
 )
 ax1.set_ylabel(r"$\tau_{\gamma\gamma}$")
 ax1.legend(loc="best", fontsize=10)
