@@ -1,5 +1,4 @@
-# script to compare the synchrotron and SSC emission of agnpy against those in
-# Dermer 2009 and jetset
+# script to compare synchrotron and SSC against Dermer 2009 and jetset
 import pkg_resources
 import numpy as np
 import astropy.units as u
@@ -11,7 +10,7 @@ from agnpy.utils.plot import load_mpl_rc, sed_x_label, sed_y_label
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 from pathlib import Path
-from utils import reproduce_sed, time_function_call
+from utils import reproduce_sed
 
 
 # agnpy
@@ -38,7 +37,7 @@ sed_synch = synch.sed_flux(nu_synch)
 sed_ssc = ssc.sed_flux(nu_ssc)
 
 
-# reproduce Dermer 2009 results with agnpy
+# reproduce Figure 7.4 of Dermer 2009 with agnpy
 # - synchrotron
 data_synch_dermer = pkg_resources.resource_filename(
     "agnpy",
