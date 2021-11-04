@@ -111,6 +111,9 @@ ax4 = fig.add_subplot(spec[1, 1], sharex=ax2, sharey=ax3)
 
 # synch SEDs
 ax1.loglog(
+    nu_synch, sed_synch, lw=2.1, ls="-", color="crimson",
+)
+ax1.loglog(
     nu_synch_dermer,
     sed_synch_agnpy_dermer,
     lw=2.1,
@@ -134,6 +137,7 @@ ax1.set_title("synchrotron")
 ax1.set_ylim([1e-14, 1e-9])
 
 # ssc SEDs
+ax2.loglog(nu_ssc, sed_ssc, lw=2.1, ls="-", color="crimson")
 ax2.loglog(
     nu_ssc_dermer, sed_ssc_agnpy_dermer, lw=2.1, ls="-", color="crimson", label="agnpy"
 )
