@@ -470,5 +470,5 @@ ax.legend(
     loc="upper center", fontsize=10, ncol=2,
 )
 Path("figures").mkdir(exist_ok=True)
-fig.savefig("figures/figure_7_sherpa_fit.png")
-fig.savefig("figures/figure_7_sherpa_fit.pdf")
+fig.savefig("figures/figure_6_sherpa_fit.png")
+fig.savefig("figures/figure_6_sherpa_fit.pdf")
