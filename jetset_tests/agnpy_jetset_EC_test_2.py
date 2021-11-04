@@ -41,7 +41,7 @@ jet = Jet(
     beaming_expr="bulk_theta",
 )
 
-jet.add_EC_component(["EC_BLR"],disk_type='BB')
+jet.add_EC_component(["EC_BLR"], disk_type="BB")
 # - blob
 jet.set_par("N", val=blob.n_e_tot.value)
 jet.set_par("p", val=blob.n_e.p1)
@@ -58,39 +58,38 @@ jet.set_par("z_cosm", val=blob.z)
 jet.set_par("L_Disk", val=L_disk.value)
 jet.set_par("tau_BLR", val=blr.xi_line)
 jet.set_par("R_BLR_out", val=blr.R_line.value)
-jet.set_par("R_BLR_in", val=blr.R_line.value*0.8)  # very thin BLR
+jet.set_par("R_BLR_in", val=blr.R_line.value * 0.8)  # very thin BLR
 jet.electron_distribution.update()
-jet._blob.theta_n_int=500
-print('theta_n_int',jet._blob.theta_n_int)
+jet._blob.theta_n_int = 500
+print("theta_n_int", jet._blob.theta_n_int)
 # compare the two electron distributions
-#gamma_jetset = jet.electron_distribution.gamma_e
-#n_e_jetset = jet.electron_distribution.n_gamma_e
-#plt.loglog(blob.gamma, blob.n_e(blob.gamma), color="crimson", label="agnpy")
-#plt.loglog(gamma_jetset, n_e_jetset, ls="--", color="k", label="jetset")
-#plt.legend()
-#plt.xlabel(r"$\gamma'$")
-#plt.ylabel(r"$n'_{\rm e}$")
-#plt.show()
+# gamma_jetset = jet.electron_distribution.gamma_e
+# n_e_jetset = jet.electron_distribution.n_gamma_e
+# plt.loglog(blob.gamma, blob.n_e(blob.gamma), color="crimson", label="agnpy")
+# plt.loglog(gamma_jetset, n_e_jetset, ls="--", color="k", label="jetset")
+# plt.legend()
+# plt.xlabel(r"$\gamma'$")
+# plt.ylabel(r"$n'_{\rm e}$")
+# plt.show()
 
 # set the same grid in frequency
 nu = np.logspace(14, 30, 100) * u.Hz
 jet.set_nu_grid(1e14, 1e30, 100)
 
 
-
 # compare for different distances
-_v=[0.1,1.5,20,100]
+_v = [0.1, 1.5, 20, 100]
 
 
-c_f=np.zeros(len(_v))
-ratios=np.zeros(len(_v))
+c_f = np.zeros(len(_v))
+ratios = np.zeros(len(_v))
 
-transformation="disk"
-tetha_deg_v=np.array([2,3,20,30])
+transformation = "disk"
+tetha_deg_v = np.array([2, 3, 20, 30])
 for i, theta_deg in enumerate(tetha_deg_v):
     fig, ax = plt.subplots(
-    1, len(_v), figsize=(12, 4), sharex=False, sharey=True, tight_layout=True
-)
+        1, len(_v), figsize=(12, 4), sharex=False, sharey=True, tight_layout=True
+    )
     for j, _r in enumerate(_v):
         blob.set_delta_D(Gamma=Gamma, theta_s=theta_deg * u.deg)
         jet.set_par("theta", val=blob.theta_s.value)
@@ -102,52 +101,74 @@ for i, theta_deg in enumerate(tetha_deg_v):
         # - jetset EC
         jet.set_par("R_H", val=r.to_value("cm"))
         jet.set_external_field_transf(transformation)
-        #jet.show_model()
+        # jet.show_model()
         # evaluate and fetch the EC on disk component
-        jet._blob.R_H_scale_factor=max(50,r.to_value("cm")/blr.R_line.to_value("cm"))
-        jet._blob.R_H_scale_factor=min(50,jet._blob.R_H_scale_factor)
-        jet._blob.R_H_lim=0.5
-        jet._blob.theta_lim=5
+        jet._blob.R_H_scale_factor = max(
+            50, r.to_value("cm") / blr.R_line.to_value("cm")
+        )
+        jet._blob.R_H_scale_factor = min(50, jet._blob.R_H_scale_factor)
+        jet._blob.R_H_lim = 0.5
+        jet._blob.theta_lim = 5
         jet.eval()
         # fetch nu and nuFnu from jetset
         nu_jetset = jet.spectral_components.EC_BLR.SED.nu
         ec_sed_jetset = jet.spectral_components.EC_BLR.SED.nuFnu
         # eliminate extremly low values
         null_values = ec_sed_jetset.value < 1e-50
-        
+
         ax[j].loglog(nu, ec_sed_agnpy, color="crimson", label="agnpy")
-       
-        ratios[j]=ec_sed_agnpy.max().value/ec_sed_jetset.max().value
-        c_f[j]=jet.get_beaming()/jet.parameters.BulkFactor.val
-        mu_s=np.cos(np.arctan(1/_r))
-        mu_star=np.sin(np.deg2rad(theta_deg))
-        cos_phi_bar=mu_s*mu_star+(np.sqrt(1-mu_s**2)*np.sqrt(1-mu_star**2))
-        print('theta',theta_deg,'r',_r,'cos_phi_bar',cos_phi_bar,'ratio',ratios[j],ratios[j]/cos_phi_bar,'delta/Gamma',c_f[j],'R_H_scale_factor',jet._blob.R_H_scale_factor)
-        
+
+        ratios[j] = ec_sed_agnpy.max().value / ec_sed_jetset.max().value
+        c_f[j] = jet.get_beaming() / jet.parameters.BulkFactor.val
+        mu_s = np.cos(np.arctan(1 / _r))
+        mu_star = np.sin(np.deg2rad(theta_deg))
+        cos_phi_bar = mu_s * mu_star + (
+            np.sqrt(1 - mu_s ** 2) * np.sqrt(1 - mu_star ** 2)
+        )
+        print(
+            "theta",
+            theta_deg,
+            "r",
+            _r,
+            "cos_phi_bar",
+            cos_phi_bar,
+            "ratio",
+            ratios[j],
+            ratios[j] / cos_phi_bar,
+            "delta/Gamma",
+            c_f[j],
+            "R_H_scale_factor",
+            jet._blob.R_H_scale_factor,
+        )
+
         ax[j].loglog(
             nu_jetset[~null_values],
-            ec_sed_jetset[~null_values]*1,
+            ec_sed_jetset[~null_values] * 1,
             ls="--",
             color="k",
             label="jetset",
         )
         ax[j].legend()
-        if j==0:
-            y_max=ec_sed_jetset[~null_values].max().value*10
-            
-        if j== len(_v)-1:
-            y_min=ec_sed_jetset[~null_values].min().value/1000
+        if j == 0:
+            y_max = ec_sed_jetset[~null_values].max().value * 10
+
+        if j == len(_v) - 1:
+            y_min = ec_sed_jetset[~null_values].min().value / 1000
             ax[j].set_ylim([y_min, y_max])
         text = (
-            f"frame = {transformation}\n" + r"$r = $" + f"{_r}" + r"$\times R_{\rm DT}$ $\theta=%$" + f"{theta_deg}"
+            f"frame = {transformation}\n"
+            + r"$r = $"
+            + f"{_r}"
+            + r"$\times R_{\rm DT}$ $\theta=%$"
+            + f"{theta_deg}"
         )
-        ax[j].text(1e20,y_max, text, bbox=dict(boxstyle="round", fc="w", alpha=0.5))
+        ax[j].text(1e20, y_max, text, bbox=dict(boxstyle="round", fc="w", alpha=0.5))
         ax[j].grid(ls=":")
         ax[j].set_xlabel(sed_x_label)
         ax[j].set_xlabel(sed_y_label)
         fig.suptitle("EC on DT")
-        #fig.savefig(f"jetset_ec_dt_comparisons.png")
-        #fig.savefig(f"jetset_ec_dt_comparisons.pdf")
+        # fig.savefig(f"jetset_ec_dt_comparisons.png")
+        # fig.savefig(f"jetset_ec_dt_comparisons.pdf")
         plt.tight_layout()
 # set labels
 
