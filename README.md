@@ -29,7 +29,6 @@ The repository contains the following files
 ├── appendix_B_sed_resolution.py
 ├── README.md
 └── utils.py
-
 ```
 
 ### scripts
@@ -50,6 +49,14 @@ source activate agnpy_paper
 after activating the environment each script can be executed via the command line with
 ```shell
 python figure_2_synchrotron_example.py
+```
+
+#### jetset comparison
+For the comparisons against jetset we are using a specific tag of the code `1.2.0rc10`, it can be installed via the `jetset-installer` script:
+```shell
+git clone https://github.com/andreatramacere/jetset-installer.git
+cd jetset-installer/
+python jetset-installer 1.2.0rc10
 ```
 
 ## Docker container
