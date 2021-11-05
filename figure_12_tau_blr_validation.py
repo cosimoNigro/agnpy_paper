@@ -124,5 +124,5 @@ ax4.semilogx(
 ax4.legend(loc="best", fontsize=10)
 ax4.set_xlabel(r"$\nu\,/\,{\rm Hz}$")
 Path("figures").mkdir(exist_ok=True)
-fig.savefig(f"figures/figure_13.png")
-fig.savefig(f"figures/figure_13.pdf")
+fig.savefig(f"figures/figure_12.png")
+fig.savefig(f"figures/figure_12.pdf")
