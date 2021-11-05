@@ -3,7 +3,7 @@ import astropy.units as u
 import pkg_resources
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
-from agnpy.targets import RingDustTorus, PointSourceBehindJet
+from agnpy.targets import SphericalShellBLR, PointSourceBehindJet
 from agnpy.absorption import Absorption
 from agnpy.utils.plot import load_mpl_rc
 from pathlib import Path
@@ -11,37 +11,33 @@ from utils import time_function_call
 
 z = 0.859  # redshift of the source
 L_disk = 2 * 1e46 * u.Unit("erg s-1")
-# dust torus definition
-T_dt = 1e3 * u.K
-xi_dt = 0.1
-dt = RingDustTorus(L_disk, xi_dt, T_dt)
-# point source approximating the DT
-ps_dt = PointSourceBehindJet(dt.xi_dt * L_disk, dt.epsilon_dt)
+xi_line = 0.024
+R_line = 1.1 * 1e17 * u.cm
+blr = SphericalShellBLR(L_disk, xi_line, "Lyalpha", R_line)
+# point source with the same luminosity as the BLR
+ps_blr = PointSourceBehindJet(blr.xi_line * L_disk, blr.epsilon_line)
 # Absorptions
-# - near the DT, aligned, to be compared with the reference
-abs_dt_near = Absorption(dt, r=1.1e18 * u.cm, z=z)
+# - aligned case, to be checked against the reference
+abs_in_blr = Absorption(blr, r=0.1 * R_line, z=z)
 # - misaligned case, to be checked against the point-source approximation
 mu_s = np.cos(np.deg2rad(20))
-abs_dt_far_mis = Absorption(dt, r=1e22 * u.cm, z=z, mu_s=mu_s)
-abs_ps_dt_far_mis = Absorption(dt, r=1e22 * u.cm, z=z, mu_s=mu_s)
+abs_out_blr_mis = Absorption(blr, r=1e3 * R_line, z=z, mu_s=mu_s)
+abs_out_ps_blr_mis = Absorption(ps_blr, r=1e3 * R_line, z=z, mu_s=mu_s)
 
 # reference SED, Figure 14 Finke Dermer
 data_file_ref_abs = pkg_resources.resource_filename(
     "agnpy",
-    "data/reference_taus/finke_2016/figure_14_left/tau_DT_r_1e1_R_Ly_alpha.txt",
+    "data/reference_taus/finke_2016/figure_14_left/tau_BLR_Ly_alpha_r_1e-1_R_Ly_alpha.txt",
 )
 data_ref = np.loadtxt(data_file_ref_abs, delimiter=",")
 E_ref = data_ref[:, 0] * u.GeV
-nu_ref = E_ref.to("Hz", equivalencies=u.spectral())
-tau_ref = 2 * data_ref[:, 1]  # correction to Finke's mistake in energy density formula
-
-# enlarge the range of frequencies for the misaligned case
-nu = np.logspace(25, 31) * u.Hz
+nu_ref = E_ref.to("Hz", equivalencies=u.spectral()) / (1 + z)
+tau_ref = data_ref[:, 1]
 
 # recompute agnpy absorption on the same frequency points of the reference
-tau_dt_near = time_function_call(abs_dt_near.tau, nu_ref)
-tau_dt_far_mis = time_function_call(abs_dt_far_mis.tau, nu)
-tau_ps_dt_far_mis = time_function_call(abs_ps_dt_far_mis.tau, nu)
+tau_in_blr = time_function_call(abs_in_blr.tau, nu_ref)
+tau_out_blr_mis = time_function_call(abs_out_blr_mis.tau, nu_ref)
+tau_out_ps_blr_mis = time_function_call(abs_out_ps_blr_mis.tau, nu_ref)
 
 
 # figure
@@ -54,25 +50,30 @@ ax1 = fig.add_subplot(spec[0, 0])
 ax2 = fig.add_subplot(spec[0, 1])
 ax3 = fig.add_subplot(spec[1, 0], sharex=ax1)
 ax4 = fig.add_subplot(spec[1, 1], sharex=ax2, sharey=ax3)
-# optical depth near the DT
-ax1.loglog(nu_ref, tau_dt_near, ls="-", lw=2, color="crimson", label="agnpy")
+# SED inside the BLR
+ax1.loglog(nu_ref, tau_in_blr, ls="-", lw=2, color="crimson", label="agnpy")
 ax1.loglog(
     nu_ref, tau_ref, ls="--", lw=1.5, color="k", label="Fig. 14, Finke (2016)",
 )
 ax1.set_ylabel(r"$\tau_{\gamma\gamma}$")
 ax1.legend(loc="best", fontsize=10)
 ax1.set_title(
-    "absorption on ring DT, "
-    + r"$r=1.1 \times 10^{18}\,{\rm cm} < R_{\rm DT},\,\mu_{\rm s}=0$"
+    "abs. on spherical shell BLR, "
+    + r"$r=1.1 \times 10^{16}\,{\rm cm} < R_{\rm Ly \alpha},\,\mu_{\rm s}=0$"
 )
 ax1.set_ylim([1e-1, 1e3])
-# optical depth far from the DT
+# SED outside the BLR
 ax2.loglog(
-    nu, tau_dt_far_mis, ls="-", lw=2, color="crimson", label="agnpy, full calculation",
+    nu_ref,
+    tau_out_blr_mis,
+    ls="-",
+    lw=2,
+    color="crimson",
+    label="agnpy, full calculation",
 )
 ax2.loglog(
-    nu,
-    tau_ps_dt_far_mis,
+    nu_ref,
+    tau_out_ps_blr_mis,
     ls="--",
     lw=1.5,
     color="k",
@@ -80,13 +81,13 @@ ax2.loglog(
 )
 ax2.legend(loc="best", fontsize=10)
 ax2.set_title(
-    "absorption on ring DT, "
-    + r"$r=10^{22}\,{\rm cm} \gg R_{\rm DT},\,\mu_{\rm s} \neq 0$"
+    "abs. on spherical shell BLR, "
+    + r"$r=1.1 \times 10^{20}\,{\rm cm} \gg R_{\rm Ly \alpha},\,\mu_{\rm s} \neq 0$"
 )
-ax2.set_ylim([1e-5, 1e-1])
+ax2.set_ylim([1e-6, 1e-2])
 # plot the deviation from the reference in the bottom panel
-deviation_ref = tau_dt_near / tau_ref - 1
-deviation_approx = tau_dt_far_mis / tau_ps_dt_far_mis - 1
+deviation_ref = tau_in_blr / tau_ref - 1
+deviation_approx = tau_out_blr_mis / tau_out_ps_blr_mis - 1
 ax3.grid(False)
 ax3.axhline(0, ls="-", color="darkgray")
 ax3.axhline(0.2, ls="--", color="darkgray")
@@ -113,7 +114,7 @@ ax4.axhline(-0.3, ls=":", color="darkgray")
 ax4.set_ylim([-0.5, 0.5])
 ax4.set_yticks([-0.4, -0.2, 0.0, 0.2, 0.4])
 ax4.semilogx(
-    nu,
+    nu_ref,
     deviation_approx,
     ls="--",
     lw=1.5,
@@ -123,5 +124,5 @@ ax4.semilogx(
 ax4.legend(loc="best", fontsize=10)
 ax4.set_xlabel(r"$\nu\,/\,{\rm Hz}$")
 Path("figures").mkdir(exist_ok=True)
-fig.savefig(f"figures/figure_14.png")
-fig.savefig(f"figures/figure_14.pdf")
+fig.savefig(f"figures/figure_12.png")
+fig.savefig(f"figures/figure_12.pdf")

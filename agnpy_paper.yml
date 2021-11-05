@@ -1,16 +1,16 @@
 name: agnpy-paper
-​
+
 channels:
   - conda-forge
   - sherpa
   - scw
-​
+  - andreatramacere
+  - astropy
+
 dependencies:
   - gammapy=0.18.2
   - python=3.7.0
   - ipython=7.10
-  # Cython isn't really needed when installing binaries,
-  # but it is convenient for users that build from source
   - cython
   - jupyter
   - jupyterlab=2.0.1
@@ -30,8 +30,8 @@ dependencies:
   - emcee=2.2.1
   - corner=2.0
   - parfive=1.0
+  - sherpa
   - pip
   - requests
-  - sherpa
-  - agnpy
-
+  - agnpy=0.1.1
+  - jetset
