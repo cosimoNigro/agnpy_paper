@@ -180,7 +180,7 @@ ax3.legend(loc="best", fontsize=10)
 ax3.set_xlabel(sed_x_label)
 ax3.set_ylabel(r"$\frac{\nu F_{\nu, \rm agnpy}}{\nu F_{\nu, \rm ref}} - 1$")
 
-# plot the deviation from the synchrotron reference in the bottom panel
+# plot the deviation from the SSC reference in the bottom panel
 deviation_ssc_dermer = sed_ssc_agnpy_dermer / sed_ssc_dermer - 1
 deviation_ssc_jetset = sed_ssc / sed_ssc_jetset - 1
 ax4.grid(False)

@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from agnpy.emission_regions import Blob
 from agnpy.targets import PointSourceBehindJet, SSDisk
 from agnpy.compton import ExternalCompton
-from agnpy.utils.plot import load_mpl_rc
+from agnpy.utils.plot import load_mpl_rc, sed_x_label, sed_y_label
 from pathlib import Path
 from utils import time_function_call
 
@@ -53,7 +53,7 @@ ec_near = ExternalCompton(blob, disk, r=r_near)
 
 # - far from the disk, to be compared with the point-source approximation
 r_far = 1e21 * u.cm
-blob.set_gamma_size(400)
+blob.set_gamma_size(500)
 ec_far = ExternalCompton(blob, disk, r=r_far)
 blob.set_gamma_size(600)
 ec_ps_in = ExternalCompton(blob, ps_in, r=r_far)
@@ -78,7 +78,7 @@ nu = np.sort(nu_denser)
 sed_ref = data_ref[:, 1] * u.Unit("erg cm-2 s-1")
 
 # compute agnpy SEDs on the denser frequency grid
-sed_ec_finke_near = time_function_call(ec_near.sed_flux, nu)
+sed_ec_near_finke = time_function_call(ec_near.sed_flux, nu)
 
 
 # jetset
@@ -90,6 +90,7 @@ jet = Jet(
     electron_distribution_log_values=False,
     beaming_expr="bulk_theta",
 )
+jet.add_EC_component(["EC_Disk"], disk_type="MultiBB")
 # - blob
 jet.set_par("N", val=blob.n_e_tot.value)
 jet.set_par("p", val=blob.n_e.p1)
@@ -104,6 +105,10 @@ jet.set_par("theta", val=blob.theta_s.value)
 jet.set_par("z_cosm", val=blob.z)
 # - disk
 jet.set_par("L_Disk", val=L_disk.value)
+jet.set_par("R_inner_Sw", val=disk.R_in_tilde / 2)
+jet.set_par("R_ext_Sw", val=disk.R_out_tilde / 2)
+jet.set_par("accr_eff", val=disk.eta)
+jet.set_par("M_BH", val=(disk.M_BH / M_sun).to_value(""))
 
 jet.electron_distribution.update()
 jet.set_nu_grid(nu_ec[0].value, nu_ec[-1].value, len(nu_ec))
@@ -113,22 +118,20 @@ jet.set_par("R_H", val=r_near.to_value("cm"))
 jet.set_external_field_transf("disk")
 jet.eval()
 
-import IPython; IPython.embed()
-exit()
-nu_ec_jmear_etset = jet.spectral_components.Sync.SED.nu
-sed_ec_jetset = jet.spectral_components.Sync.SED.nuFnu
+sed_ec_near_jetset = jet.spectral_components.EC_Disk.SED.nuFnu
 
 # - SED far from the disk
 jet.set_par("R_H", val=r_far.to_value("cm"))
 jet.set_external_field_transf("disk")
 jet.eval()
 
-nu_synch_jetset = jet.spectral_components.Sync.SED.nu
-sed_synch_jetset = jet.spectral_components.Sync.SED.nuFnu
+sed_ec_far_jetset = jet.spectral_components.EC_Disk.SED.nuFnu
+
 
 # make figure 8
 load_mpl_rc()
 plt.rcParams["text.usetex"] = True
+
 # gridspec plot setting
 fig = plt.figure(figsize=(12, 6), tight_layout=True)
 spec = gridspec.GridSpec(ncols=2, nrows=2, height_ratios=[2, 1], figure=fig)
@@ -136,49 +139,61 @@ ax1 = fig.add_subplot(spec[0, 0])
 ax2 = fig.add_subplot(spec[0, 1])
 ax3 = fig.add_subplot(spec[1, 0], sharex=ax1)
 ax4 = fig.add_subplot(spec[1, 1], sharex=ax2, sharey=ax3)
-# SED close to the disk
-ax1.loglog(nu, sed_agnpy_disk_near, ls="-", lw=2, color="crimson", label="agnpy")
+
+# SED near the disk
+ax1.loglog(nu_ec, sed_ec_near, ls="-", lw=2, color="crimson")
+ax1.loglog(nu, sed_ec_near_finke, ls="-", lw=2.1, color="crimson", label="agnpy")
 ax1.loglog(
-    nu_ref, sed_ref, ls="--", lw=1.5, color="k", label="Fig. 8, Finke (2016)",
+    nu_ref, sed_ref, ls="--", color="k", label="Fig. 8, Finke (2016)",
 )
-ax1.set_ylabel(r"$\nu F_{\nu}\,/\,({\rm erg}\,{\rm cm}^{-2}\,{\rm s}^{-1})$")
+ax1.loglog(
+    nu_ec, sed_ec_near_jetset, ls="--", color="dodgerblue", label="jetset"
+)
+ax1.set_ylabel(sed_y_label)
 ax1.legend(loc="best", fontsize=10)
 ax1.set_title("EC on Shakura Sunyaev disk, " + r"$r=10^{17}\,{\rm cm} < R_{\rm out}$")
+
 # SED far from the disk
 ax2.loglog(
-    nu,
-    sed_agnpy_disk_far,
-    ls="-",
-    lw=2,
-    color="crimson",
+    nu_ec, 
+    sed_ec_far, 
+    ls="-", 
+    lw=2.1, 
+    color="crimson", 
     label="agnpy, full calculation",
 )
 ax2.loglog(
-    nu,
-    sed_agnpy_disk_R_in,
-    ls="--",
-    lw=1.5,
+    nu_ec,
+    sed_ec_ps_in,
+    ls="-.",
     color="k",
     label="agnpy, point-source approx., " + r"$\epsilon_0 = \epsilon_0(R_{\rm in})$",
 )
 ax2.loglog(
-    nu,
-    sed_agnpy_disk_R_out,
+    nu_ec,
+    sed_ec_ps_out,
     ls=":",
-    lw=1.5,
     color="k",
     label="agnpy, point-source approx., " + r"$\epsilon_0 = \epsilon_0(R_{\rm out})$",
 )
+ax2.loglog(
+    nu_ec,
+    sed_ec_far_jetset,
+    ls="--",
+    color="dodgerblue",
+    label="jetset"
+)
 # shade the area between the two SED of the point source approximations
-ax2.fill_between(nu, sed_agnpy_disk_R_in, sed_agnpy_disk_R_out, color="silver")
+ax2.fill_between(nu_ec, sed_ec_ps_in, sed_ec_ps_out, color="silver")
 ax2.legend(loc="best", fontsize=10)
 ax2.set_title("EC on Shakura Sunyaev disk, " + r"$r=10^{21}\,{\rm cm} \gg R_{\rm out}$")
-# plot the deviation from the reference in the bottom panel
+
+# plot the deviation from the references in the bottom panel
 # remove every other value from the SED to be compared with the reference
 # as it has been calculated on the finer frequency grid
-deviation_ref = sed_agnpy_disk_near[::2] / sed_ref - 1
-deviation_approx_in = sed_agnpy_disk_far / sed_agnpy_disk_R_in - 1
-deviation_approx_out = sed_agnpy_disk_far / sed_agnpy_disk_R_out - 1
+deviation_ref = sed_ec_near_finke[::2] / sed_ref - 1
+deviation_jetset_near = sed_ec_near / sed_ec_near_jetset - 1
+
 ax3.grid(False)
 ax3.axhline(0, ls="-", color="darkgray")
 ax3.axhline(0.2, ls="--", color="darkgray")
@@ -188,12 +203,20 @@ ax3.axhline(-0.3, ls=":", color="darkgray")
 ax3.set_ylim([-0.5, 0.5])
 ax3.set_yticks([-0.4, -0.2, 0.0, 0.2, 0.4])
 ax3.semilogx(
-    nu_ref, deviation_ref, ls="--", lw=1.5, color="k", label="Fig. 8, Finke (2016)",
+    nu_ref, deviation_ref, ls="--", color="k", label="Fig. 8, Finke (2016)",
+)
+ax3.semilogx(
+    nu_ec, deviation_jetset_near, ls="--", color="dodgerblue", label="jetset",
 )
 ax3.legend(loc="best", fontsize=10)
-ax3.set_xlabel(r"$\nu\,/\,{\rm Hz}$")
+ax3.set_xlabel(sed_x_label)
 ax3.set_ylabel(r"$\frac{\nu F_{\nu, \rm agnpy}}{\nu F_{\nu, \rm ref}} - 1$")
-# plot the deviation from the point like approximation in the bottom panel
+
+# plot the deviation from the point like approximation and jetset in the bottom panel
+deviation_ps_in = sed_ec_far / sed_ec_ps_in - 1
+deviation_ps_out = sed_ec_far / sed_ec_ps_out - 1
+deviation_jetset_far = sed_ec_far / sed_ec_far_jetset - 1
+
 ax4.grid(False)
 ax4.axhline(0, ls="-", color="darkgray")
 ax4.axhline(0.2, ls="--", color="darkgray")
@@ -203,23 +226,30 @@ ax4.axhline(-0.3, ls=":", color="darkgray")
 ax4.set_ylim([-0.5, 0.5])
 ax4.set_yticks([-0.4, -0.2, 0.0, 0.2, 0.4])
 ax4.semilogx(
-    nu,
-    deviation_approx_in,
-    ls="--",
-    lw=1.5,
+    nu_ec,
+    deviation_ps_in,
+    ls="-.",
     color="k",
     label="point-source approx., " + r"$\epsilon_0 = \epsilon_0(R_{\rm in})$",
 )
 ax4.semilogx(
-    nu,
-    deviation_approx_out,
+    nu_ec,
+    deviation_ps_out,
     ls=":",
-    lw=1.5,
     color="k",
     label="point-source approx., " + r"$\epsilon_0 = \epsilon_0(R_{\rm out})$",
 )
+ax4.semilogx(
+    nu_ec,
+    deviation_jetset_far,
+    ls="--",
+    color="dodgerblue",
+    label="jetset"
+)
+
 ax4.legend(loc="best", fontsize=10)
-ax4.set_xlabel(r"$\nu\,/\,{\rm Hz}$")
+ax4.set_xlabel(sed_x_label)
+
 Path("figures").mkdir(exist_ok=True)
-fig.savefig(f"figures/figure_9.png")
-fig.savefig(f"figures/figure_9.pdf")
+fig.savefig(f"figures/figure_8.png")
+fig.savefig(f"figures/figure_8.pdf")
