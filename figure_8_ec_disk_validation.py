@@ -41,12 +41,12 @@ R_out = 200
 
 disk = SSDisk(M_BH, L_disk, eta, R_in, R_out, R_g_units=True)
 
-# point source approximating the DT
+# point sources approximating the Disk at very large distances
 ps_in = PointSourceBehindJet(L_disk, disk.epsilon(R_in))
 ps_out = PointSourceBehindJet(L_disk, disk.epsilon(R_out))
 
-# define the EC
-# - near the disk, to be compared with the reference
+# EC definition
+# - near the disk, to be compared with the references
 r_near = 1e17 * u.cm
 blob.set_gamma_size(300)
 ec_near = ExternalCompton(blob, disk, r=r_near)
@@ -91,6 +91,7 @@ jet = Jet(
     beaming_expr="bulk_theta",
 )
 jet.add_EC_component(["EC_Disk"], disk_type="MultiBB")
+
 # - blob
 jet.set_par("N", val=blob.n_e_tot.value)
 jet.set_par("p", val=blob.n_e.p1)
@@ -103,6 +104,7 @@ jet.set_par("B", val=blob.B.value)
 jet.set_par("BulkFactor", val=blob.Gamma)
 jet.set_par("theta", val=blob.theta_s.value)
 jet.set_par("z_cosm", val=blob.z)
+
 # - disk
 jet.set_par("L_Disk", val=L_disk.value)
 jet.set_par("R_inner_Sw", val=disk.R_in_tilde / 2)
@@ -110,7 +112,9 @@ jet.set_par("R_ext_Sw", val=disk.R_out_tilde / 2)
 jet.set_par("accr_eff", val=disk.eta)
 jet.set_par("M_BH", val=(disk.M_BH / M_sun).to_value(""))
 
+# - integration setup
 jet.electron_distribution.update()
+jet._blob.theta_n_int = 100
 jet.set_nu_grid(nu_ec[0].value, nu_ec[-1].value, len(nu_ec))
 
 # - SED near the disk
@@ -141,26 +145,19 @@ ax3 = fig.add_subplot(spec[1, 0], sharex=ax1)
 ax4 = fig.add_subplot(spec[1, 1], sharex=ax2, sharey=ax3)
 
 # SED near the disk
-ax1.loglog(nu_ec, sed_ec_near, ls="-", lw=2, color="crimson")
+# ax1.loglog(nu_ec, sed_ec_near, ls="-", lw=2.1, color="crimson")
 ax1.loglog(nu, sed_ec_near_finke, ls="-", lw=2.1, color="crimson", label="agnpy")
 ax1.loglog(
     nu_ref, sed_ref, ls="--", color="k", label="Fig. 8, Finke (2016)",
 )
-ax1.loglog(
-    nu_ec, sed_ec_near_jetset, ls="--", color="dodgerblue", label="jetset"
-)
+ax1.loglog(nu_ec, sed_ec_near_jetset, ls="--", color="dodgerblue", label="jetset")
 ax1.set_ylabel(sed_y_label)
 ax1.legend(loc="best", fontsize=10)
 ax1.set_title("EC on Shakura Sunyaev disk, " + r"$r=10^{17}\,{\rm cm} < R_{\rm out}$")
 
 # SED far from the disk
 ax2.loglog(
-    nu_ec, 
-    sed_ec_far, 
-    ls="-", 
-    lw=2.1, 
-    color="crimson", 
-    label="agnpy, full calculation",
+    nu_ec, sed_ec_far, ls="-", lw=2.1, color="crimson", label="agnpy, full calculation",
 )
 ax2.loglog(
     nu_ec,
@@ -176,13 +173,7 @@ ax2.loglog(
     color="k",
     label="agnpy, point-source approx., " + r"$\epsilon_0 = \epsilon_0(R_{\rm out})$",
 )
-ax2.loglog(
-    nu_ec,
-    sed_ec_far_jetset,
-    ls="--",
-    color="dodgerblue",
-    label="jetset"
-)
+ax2.loglog(nu_ec, sed_ec_far_jetset, ls="--", color="dodgerblue", label="jetset")
 # shade the area between the two SED of the point source approximations
 ax2.fill_between(nu_ec, sed_ec_ps_in, sed_ec_ps_out, color="silver")
 ax2.legend(loc="best", fontsize=10)
@@ -198,10 +189,12 @@ ax3.grid(False)
 ax3.axhline(0, ls="-", color="darkgray")
 ax3.axhline(0.2, ls="--", color="darkgray")
 ax3.axhline(-0.2, ls="--", color="darkgray")
-ax3.axhline(0.3, ls=":", color="darkgray")
-ax3.axhline(-0.3, ls=":", color="darkgray")
-ax3.set_ylim([-0.5, 0.5])
-ax3.set_yticks([-0.4, -0.2, 0.0, 0.2, 0.4])
+ax3.axhline(0.3, ls="-.", color="darkgray")
+ax3.axhline(-0.3, ls="-.", color="darkgray")
+ax3.axhline(0.5, ls=":", color="darkgray")
+ax3.axhline(-0.5, ls=":", color="darkgray")
+ax3.set_ylim([-1.1, 1.1])
+ax3.set_yticks([-1, -0.5, 0.0, 0.5, 1.0])
 ax3.semilogx(
     nu_ref, deviation_ref, ls="--", color="k", label="Fig. 8, Finke (2016)",
 )
@@ -221,10 +214,12 @@ ax4.grid(False)
 ax4.axhline(0, ls="-", color="darkgray")
 ax4.axhline(0.2, ls="--", color="darkgray")
 ax4.axhline(-0.2, ls="--", color="darkgray")
-ax4.axhline(0.3, ls=":", color="darkgray")
-ax4.axhline(-0.3, ls=":", color="darkgray")
-ax4.set_ylim([-0.5, 0.5])
-ax4.set_yticks([-0.4, -0.2, 0.0, 0.2, 0.4])
+ax4.axhline(0.3, ls="-.", color="darkgray")
+ax4.axhline(-0.3, ls="-.", color="darkgray")
+ax4.axhline(0.5, ls=":", color="darkgray")
+ax4.axhline(-0.5, ls=":", color="darkgray")
+ax4.set_ylim([-1.1, 1.1])
+ax4.set_yticks([-1, -0.5, 0.0, 0.5, 1.0])
 ax4.semilogx(
     nu_ec,
     deviation_ps_in,
@@ -239,14 +234,7 @@ ax4.semilogx(
     color="k",
     label="point-source approx., " + r"$\epsilon_0 = \epsilon_0(R_{\rm out})$",
 )
-ax4.semilogx(
-    nu_ec,
-    deviation_jetset_far,
-    ls="--",
-    color="dodgerblue",
-    label="jetset"
-)
-
+ax4.semilogx(nu_ec, deviation_jetset_far, ls="--", color="dodgerblue", label="jetset")
 ax4.legend(loc="best", fontsize=10)
 ax4.set_xlabel(sed_x_label)
 
