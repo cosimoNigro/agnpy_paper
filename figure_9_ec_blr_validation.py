@@ -118,6 +118,9 @@ jet._blob.R_H_scale_factor = max(50, r_in.to_value("cm") / blr.R_line.to_value("
 jet._blob.R_H_scale_factor = min(50, jet._blob.R_H_scale_factor)
 jet._blob.R_H_lim = 0.5
 jet._blob.theta_lim = 5
+jet.set_gamma_grid_size(10000)
+jet._blob.IC_adaptive_e_binning=True
+
 jet.eval()
 
 sed_ec_in_jetset = jet.spectral_components.EC_BLR.SED.nuFnu
@@ -130,6 +133,8 @@ jet._blob.R_H_scale_factor = max(50, r_in.to_value("cm") / blr.R_line.to_value("
 jet._blob.R_H_scale_factor = min(50, jet._blob.R_H_scale_factor)
 jet._blob.R_H_lim = 0.5
 jet._blob.theta_lim = 5
+
+
 jet.eval()
 
 sed_ec_out_jetset = jet.spectral_components.EC_BLR.SED.nuFnu
