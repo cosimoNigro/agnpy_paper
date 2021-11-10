@@ -1,6 +1,5 @@
 import numpy as np
 import astropy.units as u
-import pkg_resources
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 from agnpy.emission_regions import Blob
