@@ -59,7 +59,7 @@ blob.set_gamma_size(600)
 ec_ps_in = ExternalCompton(blob, ps_in, r=r_far)
 ec_ps_out = ExternalCompton(blob, ps_out, r=r_far)
 
-nu_ec = np.logspace(15, 29, 100) * u.Hz
+nu_ec = np.logspace(16, 29, 100) * u.Hz
 sed_ec_near = ec_near.sed_flux(nu_ec)
 sed_ec_far = ec_far.sed_flux(nu_ec)
 sed_ec_ps_in = ec_ps_in.sed_flux(nu_ec)
@@ -72,10 +72,14 @@ data_file_ref_disk = pkg_resources.resource_filename(
 )
 data_ref = np.loadtxt(data_file_ref_disk, delimiter=",")
 nu_ref = data_ref[:, 0] * u.Hz
+# plot above 10^16 Hz
+condition = nu_ref >= nu_ec[0]
+nu_ref = nu_ref[condition]
 # make a denser frequency grid with intermediate points in log-scale
 nu_denser = np.append(nu_ref, np.sqrt(nu_ref[1:] * nu_ref[:-1]))
 nu = np.sort(nu_denser)
 sed_ref = data_ref[:, 1] * u.Unit("erg cm-2 s-1")
+sed_ref = sed_ref[condition]
 
 # compute agnpy SEDs on the denser frequency grid
 sed_ec_near_finke = time_function_call(ec_near.sed_flux, nu)
