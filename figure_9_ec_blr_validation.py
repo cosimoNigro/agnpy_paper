@@ -107,6 +107,8 @@ jet.set_par("R_BLR_out", val=blr.R_line.value)
 
 # - integration setup
 jet.electron_distribution.update()
+jet.set_gamma_grid_size(10000)
+jet._blob.IC_adaptive_e_binning=True
 jet._blob.theta_n_int = 500
 jet.set_nu_grid(nu_ec[0].value, nu_ec[-1].value, len(nu_ec))
 
@@ -118,8 +120,6 @@ jet._blob.R_H_scale_factor = max(50, r_in.to_value("cm") / blr.R_line.to_value("
 jet._blob.R_H_scale_factor = min(50, jet._blob.R_H_scale_factor)
 jet._blob.R_H_lim = 0.5
 jet._blob.theta_lim = 5
-jet.set_gamma_grid_size(10000)
-jet._blob.IC_adaptive_e_binning=True
 
 jet.eval()
 
@@ -133,7 +133,6 @@ jet._blob.R_H_scale_factor = max(50, r_in.to_value("cm") / blr.R_line.to_value("
 jet._blob.R_H_scale_factor = min(50, jet._blob.R_H_scale_factor)
 jet._blob.R_H_lim = 0.5
 jet._blob.theta_lim = 5
-
 
 jet.eval()
 

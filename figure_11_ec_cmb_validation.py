@@ -34,7 +34,7 @@ cmb = CMB(z=blob.z)
 
 ec_cmb = ExternalCompton(blob, cmb)
 
-nu_ec = np.logspace(14, 30, 100) * u.Hz
+nu_ec = np.logspace(16, 29, 100) * u.Hz
 sed_ec = ec_cmb.sed_flux(nu_ec)
 
 
@@ -62,7 +62,10 @@ jet.set_par("BulkFactor", val=blob.Gamma)
 jet.set_par("theta", val=blob.theta_s.value)
 jet.set_par("z_cosm", val=blob.z)
 
+# - integration setup
 jet.electron_distribution.update()
+jet.set_gamma_grid_size(10000)
+jet._blob.IC_adaptive_e_binning=True
 jet.set_nu_grid(nu_ec[0].value, nu_ec[-1].value, len(nu_ec))
 jet.set_external_field_transf('disk')
 
