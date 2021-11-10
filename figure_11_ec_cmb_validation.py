@@ -65,9 +65,9 @@ jet.set_par("z_cosm", val=blob.z)
 # - integration setup
 jet.electron_distribution.update()
 jet.set_gamma_grid_size(10000)
-jet._blob.IC_adaptive_e_binning=True
+jet._blob.IC_adaptive_e_binning = True
 jet.set_nu_grid(nu_ec[0].value, nu_ec[-1].value, len(nu_ec))
-jet.set_external_field_transf('disk')
+jet.set_external_field_transf("disk")
 
 # - SED
 jet.eval()

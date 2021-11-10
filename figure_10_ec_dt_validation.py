@@ -106,7 +106,7 @@ jet.set_par("T_DT", val=dt.T_dt.value)
 # - integration setup
 jet.electron_distribution.update()
 jet.set_gamma_grid_size(10000)
-jet._blob.IC_adaptive_e_binning=True
+jet._blob.IC_adaptive_e_binning = True
 jet._blob.theta_n_int = 500
 jet.set_nu_grid(nu_ec[0].value, nu_ec[-1].value, len(nu_ec))
 
