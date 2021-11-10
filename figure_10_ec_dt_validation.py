@@ -105,6 +105,8 @@ jet.set_par("T_DT", val=dt.T_dt.value)
 
 # - integration setup
 jet.electron_distribution.update()
+jet.set_gamma_grid_size(10000)
+jet._blob.IC_adaptive_e_binning=True
 jet._blob.theta_n_int = 500
 jet.set_nu_grid(nu_ec[0].value, nu_ec[-1].value, len(nu_ec))
 
@@ -116,6 +118,7 @@ jet._blob.R_H_scale_factor = 50
 jet._blob.R_ext_factor = 0.5
 theta_lim = np.rad2deg(np.arctan(jet.get_beaming() / jet.parameters.BulkFactor.val))
 jet._blob.EC_theta_lim = theta_lim
+
 jet.eval()
 
 sed_ec_near_jetset = jet.spectral_components.EC_DT.SED.nuFnu
@@ -128,6 +131,7 @@ jet._blob.R_H_scale_factor = 50
 jet._blob.R_ext_factor = 0.5
 theta_lim = np.rad2deg(np.arctan(jet.get_beaming() / jet.parameters.BulkFactor.val))
 jet._blob.EC_theta_lim = theta_lim
+
 jet.eval()
 
 sed_ec_far_jetset = jet.spectral_components.EC_DT.SED.nuFnu
