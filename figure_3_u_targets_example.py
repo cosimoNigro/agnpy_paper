@@ -49,7 +49,7 @@ u_dt = time_function_call(dt.u, r, blob)
 u_syn = blob.u_ph_synch
 
 
-# plot
+# make figure 3
 load_mpl_rc()
 plt.rcParams["text.usetex"] = True
 fig, ax = plt.subplots()

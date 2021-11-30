@@ -87,7 +87,7 @@ tau_synch = time_tau(abs_synch, nu)
 tau_ext = tau_blr_ly_alpha + tau_blr_H_alpha + tau_dt
 
 
-# plot
+# make figure 4
 load_mpl_rc()
 plt.rcParams["text.usetex"] = True
 fig, ax = plt.subplots()

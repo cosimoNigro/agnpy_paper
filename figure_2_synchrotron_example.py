@@ -32,7 +32,7 @@ nu = np.logspace(8, 23, 100) * u.Hz
 sed = time_sed_flux(synch, nu)
 
 
-# plot
+# make figure 2
 load_mpl_rc()
 plt.rcParams["text.usetex"] = True
 fig, ax = plt.subplots()
