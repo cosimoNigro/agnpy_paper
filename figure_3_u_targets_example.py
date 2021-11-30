@@ -48,12 +48,14 @@ u_blr = time_function_call(blr.u, r, blob)
 u_dt = time_function_call(dt.u, r, blob)
 u_syn = blob.u_ph_synch
 
+
 # plot
 load_mpl_rc()
 plt.rcParams["text.usetex"] = True
 fig, ax = plt.subplots()
 u_label = r"$u'\,/\,({\rm erg}\,{\rm cm}^{-3})$"
 r_label = r"$r\,/\,{\rm cm}$"
+
 ax.axhline(u_cmb.to_value("erg cm-3"), lw=2, color="k", label="CMB")
 ax.loglog(r, u_disk, lw=2, color="crimson", label="disk")
 ax.loglog(r, u_blr, lw=2, color="dodgerblue", label="broad line region")
@@ -72,9 +74,11 @@ ax.axhline(
     color="lightseagreen",
     label="synchrotron",
 )
+
 ax.legend(loc="best")
 ax.set_xlabel(r_label, fontsize=12)
 ax.set_ylabel(u_label, fontsize=12)
+
 Path("figures").mkdir(exist_ok=True)
 fig.savefig("figures/figure_3.png")
 fig.savefig("figures/figure_3.pdf")
