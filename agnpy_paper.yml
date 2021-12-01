@@ -12,9 +12,10 @@ dependencies:
   - scipy=1.7.2
   - astropy=4.3.1
   - matplotlib=3.4.3
+  - iminuit=1.5.4
+  - gammapy=0.18.2
   - ipython
   - jupyter
-  - gammapy=0.19
   - numba
   - sherpa
   - pip
