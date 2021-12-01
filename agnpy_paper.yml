@@ -1,6 +1,7 @@
 name: agnpy-paper
 
 channels:
+  - anaconda
   - conda-forge
   - sherpa
   - andreatramacere
@@ -18,8 +19,9 @@ dependencies:
   - jupyter
   - numba
   - sherpa
-  - pip
   - dill
+  - swig
+  - pip
   - pip:
     - agnpy==0.1.2
     - git+https://github.com/andreatramacere/jetset.git@1.2.0rc10
