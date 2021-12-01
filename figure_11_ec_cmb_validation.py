@@ -7,7 +7,7 @@ from agnpy.targets import CMB
 from agnpy.compton import ExternalCompton
 from agnpy.utils.plot import load_mpl_rc, sed_x_label, sed_y_label
 from pathlib import Path
-from utils import time_function_call
+from utils import time_sed_flux
 
 
 # agnpy
@@ -33,8 +33,8 @@ cmb = CMB(z=blob.z)
 
 ec_cmb = ExternalCompton(blob, cmb)
 
-nu_ec = np.logspace(16, 29, 100) * u.Hz
-sed_ec = time_function_call(ec_cmb.sed_flux, nu_ec)
+nu_ec = np.logspace(16, 29, 40) * u.Hz
+sed_ec = time_sed_flux(ec_cmb, nu_ec)
 
 
 # jetset

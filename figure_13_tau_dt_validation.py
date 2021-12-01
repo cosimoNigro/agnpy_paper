@@ -7,7 +7,7 @@ from agnpy.targets import RingDustTorus, PointSourceBehindJet
 from agnpy.absorption import Absorption
 from agnpy.utils.plot import load_mpl_rc
 from pathlib import Path
-from utils import time_function_call
+from utils import time_tau
 
 z = 0.859  # redshift of the source
 L_disk = 2 * 1e46 * u.Unit("erg s-1")
@@ -39,14 +39,15 @@ tau_ref = 2 * data_ref[:, 1]  # correction to Finke's mistake in energy density 
 nu = np.logspace(25, 31) * u.Hz
 
 # recompute agnpy absorption on the same frequency points of the reference
-tau_dt_near = time_function_call(abs_dt_near.tau, nu_ref)
-tau_dt_far_mis = time_function_call(abs_dt_far_mis.tau, nu)
-tau_ps_dt_far_mis = time_function_call(abs_ps_dt_far_mis.tau, nu)
+tau_dt_near = time_tau(abs_dt_near, nu_ref)
+tau_dt_far_mis = time_tau(abs_dt_far_mis, nu)
+tau_ps_dt_far_mis = time_tau(abs_ps_dt_far_mis, nu)
 
 
-# figure
+# make figure 13
 load_mpl_rc()
 plt.rcParams["text.usetex"] = True
+
 # gridspec plot setting
 fig = plt.figure(figsize=(12, 6), tight_layout=True)
 spec = gridspec.GridSpec(ncols=2, nrows=2, height_ratios=[2, 1], figure=fig)
@@ -54,6 +55,7 @@ ax1 = fig.add_subplot(spec[0, 0])
 ax2 = fig.add_subplot(spec[0, 1])
 ax3 = fig.add_subplot(spec[1, 0], sharex=ax1)
 ax4 = fig.add_subplot(spec[1, 1], sharex=ax2, sharey=ax3)
+
 # optical depth near the DT
 ax1.loglog(nu_ref, tau_dt_near, ls="-", lw=2, color="crimson", label="agnpy")
 ax1.loglog(
@@ -66,6 +68,7 @@ ax1.set_title(
     + r"$r=1.1 \times 10^{18}\,{\rm cm} < R_{\rm DT},\,\mu_{\rm s}=0$"
 )
 ax1.set_ylim([1e-1, 1e3])
+
 # optical depth far from the DT
 ax2.loglog(
     nu, tau_dt_far_mis, ls="-", lw=2, color="crimson", label="agnpy, full calculation",
@@ -84,9 +87,10 @@ ax2.set_title(
     + r"$r=10^{22}\,{\rm cm} \gg R_{\rm DT},\,\mu_{\rm s} \neq 0$"
 )
 ax2.set_ylim([1e-5, 1e-1])
+
 # plot the deviation from the reference in the bottom panel
 deviation_ref = tau_dt_near / tau_ref - 1
-deviation_approx = tau_dt_far_mis / tau_ps_dt_far_mis - 1
+
 ax3.grid(False)
 ax3.axhline(0, ls="-", color="darkgray")
 ax3.axhline(0.2, ls="--", color="darkgray")
@@ -103,7 +107,10 @@ ax3.set_xlabel(r"$\nu\,/\,{\rm Hz}$")
 ax3.set_ylabel(
     r"$\frac{\tau_{\gamma\gamma, \rm agnpy}}{\tau_{\gamma\gamma, \rm ref}} - 1$"
 )
+
 # plot the deviation from the point like approximation in the bottom panel
+deviation_approx = tau_dt_far_mis / tau_ps_dt_far_mis - 1
+
 ax4.grid(False)
 ax4.axhline(0, ls="-", color="darkgray")
 ax4.axhline(0.2, ls="--", color="darkgray")
@@ -122,6 +129,7 @@ ax4.semilogx(
 )
 ax4.legend(loc="best", fontsize=10)
 ax4.set_xlabel(r"$\nu\,/\,{\rm Hz}$")
+
 Path("figures").mkdir(exist_ok=True)
 fig.savefig(f"figures/figure_13.png")
 fig.savefig(f"figures/figure_13.pdf")
