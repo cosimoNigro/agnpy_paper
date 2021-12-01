@@ -227,6 +227,14 @@ sed_path = pkg_resources.resource_filename(
     "agnpy", "data/mwl_seds/PKS1510-089_2015b.ecsv"
 )
 sed_table = Table.read(sed_path)
+
+mask = np.zeros_like(sed_table["e_ref"], dtype=bool)
+mask[np.unique(sed_table["e_ref"], return_index=True)[1]] = True
+mask = ~mask
+sed_table["e_ref"][mask.tolist()] +=0.00001 
+sed_table.sort(keys="e_ref")# sorting data wrt e_ref
+
+
 x = sed_table["e_ref"].to("Hz", equivalencies=u.spectral())
 y = sed_table["e2dnde"]
 y_err_stat = sed_table["e2dnde_errn"]

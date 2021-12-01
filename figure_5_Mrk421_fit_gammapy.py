@@ -7,6 +7,7 @@ import astropy.units as u
 from astropy.constants import c
 from astropy.table import Table
 from astropy.coordinates import Distance
+from astropy.table import Table
 import matplotlib.pyplot as plt
 from utils import time_function_call
 
@@ -115,16 +116,21 @@ SPECTRAL_MODEL_REGISTRY.append(AgnpySSC)
 
 logging.info("reading Mrk421 SED from agnpy datas")
 sed_path = pkg_resources.resource_filename("agnpy", "data/mwl_seds/Mrk421_2011.ecsv")
-flux_points = FluxPoints.read(sed_path)
+
+sed_table = Table.read(sed_path)
+sed_table.sort(keys="e_ref")
+_,mask = np.unique(sed_table["e_ref"],return_index=True)
+sed_table = sed_table[mask.tolist()]
+
 # array of systematic errors, will just be summed in quadrature to the statistical error
 # we assume
 # - 30% on VHE gamma-ray instruments
 # - 10% on HE gamma-ray instruments
 # - 10% on X-ray instruments
 # - 5% on lower-energy instruments
-x = flux_points.table["e_ref"]
-y = flux_points.table["e2dnde"]
-y_err_stat = flux_points.table["e2dnde_err"]
+x = sed_table["e_ref"]
+y = sed_table["e2dnde"]
+y_err_stat = sed_table["e2dnde_err"]
 y_err_syst = np.zeros(len(x))
 # define energy ranges
 e_vhe = 100 * u.GeV
@@ -142,8 +148,10 @@ y_err_syst[x_ray] = 0.10
 y_err_syst[uv_to_radio] = 0.05
 y_err_syst = y * y_err_syst
 # sum in quadrature the errors
-flux_points.table["e2dnde_err"] = np.sqrt(y_err_stat ** 2 + y_err_syst ** 2)
-flux_points = flux_points.to_sed_type("dnde")
+sed_table["e2dnde_err"] = np.sqrt(y_err_stat ** 2 + y_err_syst ** 2)
+
+#define the fluxpoints object
+flux_points = FluxPoints.from_table(sed_table, sed_type="e2dnde")
 
 # declare a model
 agnpy_ssc = AgnpySSC()
@@ -153,7 +161,7 @@ d_L = Distance(z=z).to("cm")
 # - AGN parameters
 agnpy_ssc.z.quantity = z
 agnpy_ssc.z.frozen = True
-agnpy_ssc.d_L.quantity = d_L
+agnpy_ssc.d_L.quantity = d_L.cgs
 agnpy_ssc.d_L.frozen = True
 # - blob parameters
 agnpy_ssc.delta_D.quantity = 18
@@ -182,13 +190,13 @@ logging.info("performing the fit")
 fit_check_dir = "figures/figure_6_checks_gammapy_fit"
 Path(fit_check_dir).mkdir(parents=True, exist_ok=True)
 # define the fitter
-fitter = Fit([dataset_ssc])
-results = time_function_call(fitter.run, optimize_opts={"print_level": 1})
+fitter = Fit(optimize_opts={"print_level": 1})
+results = time_function_call(fitter.run,[dataset_ssc])
 print(results)
 print(agnpy_ssc.parameters.to_table())
 # plot best-fit model and covariance
-flux_points.plot(energy_unit="eV", energy_power=2)
-agnpy_ssc.plot(energy_range=[1e-6, 1e15] * u.eV, energy_unit="eV", energy_power=2)
+flux_points.plot(energy_power=2)
+agnpy_ssc.plot(energy_bounds=[1e-6, 1e15] * u.eV,  energy_power=2)
 plt.savefig(f"{fit_check_dir}/best_fit.png")
 plt.close()
 agnpy_ssc.covariance.plot_correlation()

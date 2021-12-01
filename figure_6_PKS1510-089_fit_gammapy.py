@@ -7,6 +7,7 @@ import astropy.units as u
 from astropy.constants import k_B, m_e, c, G, M_sun
 from astropy.table import Table
 from astropy.coordinates import Distance
+from astropy.table import Table
 import matplotlib.pyplot as plt
 from utils import time_function_call
 
@@ -184,16 +185,27 @@ logging.info("reading PKS1510-089 SED from agnpy datas")
 sed_path = pkg_resources.resource_filename(
     "agnpy", "data/mwl_seds/PKS1510-089_2015b.ecsv"
 )
-flux_points = FluxPoints.read(sed_path)
+
+sed_table = Table.read(sed_path)
+
+mask = np.zeros_like(sed_table["e_ref"], dtype=bool)
+mask[np.unique(sed_table["e_ref"], return_index=True)[1]] = True
+mask = ~mask
+sed_table["e_ref"][mask.tolist()] +=0.0000001 
+sed_table.sort(keys="e_ref")# sorting data wrt e_ref
+
+# _,mask = np.unique(sed_table["e_ref"],return_index=True)
+# sed_table = sed_table[mask.tolist()]
+
 # array of systematic errors, will just be summed in quadrature to the statistical error
 # we assume
 # - 30% on VHE gamma-ray instruments
 # - 10% on HE gamma-ray instruments
 # - 10% on X-ray instruments
 # - 5% on lower-energy instruments
-x = flux_points.table["e_ref"]
-y = flux_points.table["e2dnde"]
-y_err_stat = flux_points.table["e2dnde_errn"]
+x = sed_table["e_ref"]
+y = sed_table["e2dnde"]
+y_err_stat = sed_table["e2dnde_errn"]
 y_err_syst = np.zeros(len(x))
 # define energy ranges
 e_vhe = 100 * u.GeV
@@ -211,8 +223,10 @@ y_err_syst[x_ray] = 0.10
 y_err_syst[uv_to_radio] = 0.05
 y_err_syst = y * y_err_syst
 # sum in quadrature the errors
-flux_points.table["e2dnde_err"] = np.sqrt(y_err_stat ** 2 + y_err_syst ** 2)
-flux_points = flux_points.to_sed_type("dnde")
+sed_table["e2dnde_err"] = np.sqrt(y_err_stat ** 2 + y_err_syst ** 2)
+
+#define the fluxpoints object
+flux_points = FluxPoints.from_table(sed_table, sed_type="e2dnde")
 
 # declare a model
 agnpy_ec = AgnpyEC()
@@ -245,7 +259,7 @@ r = 6e17 * u.cm
 # -- distances
 agnpy_ec.z.quantity = z
 agnpy_ec.z.frozen = True
-agnpy_ec.d_L.quantity = d_L.cgs.value
+agnpy_ec.d_L.quantity = d_L.cgs
 agnpy_ec.d_L.frozen = True
 # -- SS disk
 agnpy_ec.log10_L_disk.quantity = np.log10(L_disk.to_value("erg s-1"))
@@ -297,13 +311,13 @@ logging.info("performing the fit and estimating the error on the parameters")
 fit_check_dir = "figures/figure_7_checks_gammapy_fit"
 Path(fit_check_dir).mkdir(parents=True, exist_ok=True)
 # define the fitter
-fitter = Fit([dataset_ec])
-results = time_function_call(fitter.run, optimize_opts={"print_level": 1})
+fitter = Fit(optimize_opts={"print_level": 1})
+results = time_function_call(fitter.run,[dataset_ec])
 print(results)
 print(agnpy_ec.parameters.to_table())
 # plot best-fit model and covariance
-flux_points.plot(energy_unit="eV", energy_power=2)
-agnpy_ec.plot(energy_range=[1e-6, 1e15] * u.eV, energy_unit="eV", energy_power=2)
+flux_points.plot(energy_power=2)
+agnpy_ec.plot(energy_bounds=[1e-6, 1e15] * u.eV,  energy_power=2)
 plt.ylim([10 ** (-13.5), 10 ** (-7.5)])
 plt.savefig(f"{fit_check_dir}/best_fit.png")
 plt.close()
