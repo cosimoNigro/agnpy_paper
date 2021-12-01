@@ -2,6 +2,7 @@
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
+import copy
 import pkg_resources
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
@@ -10,7 +11,7 @@ from agnpy.targets import PointSourceBehindJet, SSDisk
 from agnpy.compton import ExternalCompton
 from agnpy.utils.plot import load_mpl_rc, sed_x_label, sed_y_label
 from pathlib import Path
-from utils import time_function_call
+from utils import reproduce_sed, time_sed_flux
 
 
 # agnpy
@@ -30,6 +31,12 @@ delta_D = 40
 Gamma = 40
 
 blob = Blob(R_b, z, delta_D, Gamma, B, spectrum_norm, spectrum_dict)
+blob.set_gamma_size(400)
+
+# for the scattering on point source we will need a blob with a denser grid in
+# Lorentz factor, let us create a copy and increase the size of the gamma grid
+blob_ps = copy.copy(blob)
+blob_ps.set_gamma_size(900)
 
 # disk parameters of Finke 2016
 M_sun = const.M_sun.cgs
@@ -48,41 +55,29 @@ ps_out = PointSourceBehindJet(L_disk, disk.epsilon(R_out))
 # EC definition
 # - near the disk, to be compared with the references
 r_near = 1e17 * u.cm
-blob.set_gamma_size(300)
 ec_near = ExternalCompton(blob, disk, r=r_near)
 
 # - far from the disk, to be compared with the point-source approximation
 r_far = 1e21 * u.cm
-blob.set_gamma_size(500)
 ec_far = ExternalCompton(blob, disk, r=r_far)
-blob.set_gamma_size(600)
-ec_ps_in = ExternalCompton(blob, ps_in, r=r_far)
-ec_ps_out = ExternalCompton(blob, ps_out, r=r_far)
+ec_ps_in = ExternalCompton(blob_ps, ps_in, r=r_far)
+ec_ps_out = ExternalCompton(blob_ps, ps_out, r=r_far)
 
-nu_ec = np.logspace(16, 29, 100) * u.Hz
-sed_ec_near = ec_near.sed_flux(nu_ec)
-sed_ec_far = ec_far.sed_flux(nu_ec)
-sed_ec_ps_in = ec_ps_in.sed_flux(nu_ec)
-sed_ec_ps_out = ec_ps_out.sed_flux(nu_ec)
-
+nu_ec = np.logspace(16, 29, 40) * u.Hz
+sed_ec_near = time_sed_flux(ec_near, nu_ec)
+sed_ec_far = time_sed_flux(ec_far, nu_ec)
+sed_ec_ps_in = time_sed_flux(ec_ps_in, nu_ec)
+sed_ec_ps_out = time_sed_flux(ec_ps_out, nu_ec)
 
 # reproduce Figure 8 of Finke 2016 with agnpy
-data_file_ref_disk = pkg_resources.resource_filename(
+data_ec_disk_finke = pkg_resources.resource_filename(
     "agnpy", "data/reference_seds/finke_2016/figure_8/ec_disk_r_1e17.txt"
 )
-data_ref = np.loadtxt(data_file_ref_disk, delimiter=",")
-nu_ref = data_ref[:, 0] * u.Hz
-# plot above 10^16 Hz
-condition = nu_ref >= nu_ec[0]
-nu_ref = nu_ref[condition]
-# make a denser frequency grid with intermediate points in log-scale
-nu_denser = np.append(nu_ref, np.sqrt(nu_ref[1:] * nu_ref[:-1]))
-nu = np.sort(nu_denser)
-sed_ref = data_ref[:, 1] * u.Unit("erg cm-2 s-1")
-sed_ref = sed_ref[condition]
 
-# compute agnpy SEDs on the denser frequency grid
-sed_ec_near_finke = time_function_call(ec_near.sed_flux, nu)
+ec_nu_range = [nu_ec[0], nu_ec[-1]]
+nu_ref, sed_ref, sed_ec_near_finke = reproduce_sed(
+    data_ec_disk_finke, ec_near, ec_nu_range
+)
 
 
 # jetset
@@ -151,8 +146,7 @@ ax3 = fig.add_subplot(spec[1, 0], sharex=ax1)
 ax4 = fig.add_subplot(spec[1, 1], sharex=ax2, sharey=ax3)
 
 # SED near the disk
-# ax1.loglog(nu_ec, sed_ec_near, ls="-", lw=2.1, color="crimson")
-ax1.loglog(nu, sed_ec_near_finke, ls="-", lw=2.1, color="crimson", label="agnpy")
+ax1.loglog(nu_ref, sed_ec_near_finke, ls="-", lw=2.1, color="crimson", label="agnpy")
 ax1.loglog(
     nu_ref, sed_ref, ls="--", color="k", label="Fig. 8, Finke (2016)",
 )
@@ -186,9 +180,7 @@ ax2.legend(loc="best", fontsize=10)
 ax2.set_title("EC on Shakura Sunyaev disk, " + r"$r=10^{21}\,{\rm cm} \gg R_{\rm out}$")
 
 # plot the deviation from the references in the bottom panel
-# remove every other value from the SED to be compared with the reference
-# as it has been calculated on the finer frequency grid
-deviation_ref = sed_ec_near_finke[::2] / sed_ref - 1
+deviation_ref = sed_ec_near_finke / sed_ref - 1
 deviation_jetset_near = sed_ec_near / sed_ec_near_jetset - 1
 
 ax3.grid(False)

@@ -10,7 +10,7 @@ from agnpy.utils.plot import load_mpl_rc, sed_x_label, sed_y_label
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 from pathlib import Path
-from utils import reproduce_sed
+from utils import reproduce_sed, time_sed_flux
 
 
 # agnpy
@@ -33,9 +33,8 @@ ssc = SynchrotronSelfCompton(blob)
 nu_synch = np.logspace(9, 19, 100) * u.Hz
 nu_ssc = np.logspace(14, 26, 100) * u.Hz
 
-sed_synch = synch.sed_flux(nu_synch)
-sed_ssc = ssc.sed_flux(nu_ssc)
-
+sed_synch = time_sed_flux(synch, nu_synch)
+sed_ssc = time_sed_flux(ssc, nu_ssc)
 
 # reproduce Figure 7.4 of Dermer 2009 with agnpy
 # - synchrotron
@@ -110,9 +109,6 @@ ax4 = fig.add_subplot(spec[1, 1], sharex=ax2, sharey=ax3)
 
 # synch SEDs
 ax1.loglog(
-    nu_synch, sed_synch, lw=2.1, ls="-", color="crimson",
-)
-ax1.loglog(
     nu_synch_dermer,
     sed_synch_agnpy_dermer,
     lw=2.1,
@@ -135,8 +131,7 @@ ax1.legend(loc="best")
 ax1.set_title("synchrotron")
 ax1.set_ylim([1e-14, 1e-9])
 
-# ssc SEDs
-ax2.loglog(nu_ssc, sed_ssc, lw=2.1, ls="-", color="crimson")
+# SSC SEDs
 ax2.loglog(
     nu_ssc_dermer, sed_ssc_agnpy_dermer, lw=2.1, ls="-", color="crimson", label="agnpy"
 )
@@ -204,6 +199,7 @@ ax4.semilogx(
 )
 ax4.legend(loc="best", fontsize=10)
 ax4.set_xlabel(sed_x_label)
+
 Path("figures").mkdir(exist_ok=True)
 fig.savefig(f"figures/figure_7.png")
 fig.savefig(f"figures/figure_7.pdf")

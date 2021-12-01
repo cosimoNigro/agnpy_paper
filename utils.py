@@ -73,7 +73,9 @@ def time_tau(absorption, nu):
 
 
 def reproduce_sed(dataset, process, nu_range):
-    """function to reproduce the SED data in a given reference dataset"""
+    """Function to reproduce the SED data in a given reference dataset.
+    The execution is also timed.
+    """
     # reference SED
     sed_data = np.loadtxt(dataset, delimiter=",")
     nu_ref = sed_data[:, 0] * u.Hz
@@ -82,5 +84,5 @@ def reproduce_sed(dataset, process, nu_range):
     nu_ref = nu_ref[comparison]
     sed_ref = sed_data[:, 1][comparison] * u.Unit("erg cm-2 s-1")
     # compute the sed with agnpy on the same frequencies, time it also
-    sed_agnpy = time_sed_flux(process.sed_flux, nu_ref)
+    sed_agnpy = time_sed_flux(process, nu_ref)
     return nu_ref, sed_ref, sed_agnpy

@@ -2,6 +2,7 @@
 import numpy as np
 import astropy.units as u
 import pkg_resources
+import copy
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 from agnpy.emission_regions import Blob
@@ -9,7 +10,7 @@ from agnpy.targets import PointSourceBehindJet, RingDustTorus
 from agnpy.compton import ExternalCompton
 from agnpy.utils.plot import load_mpl_rc, sed_x_label, sed_y_label
 from pathlib import Path
-from utils import time_function_call
+from utils import reproduce_sed, time_sed_flux
 
 
 # agnpy
@@ -29,6 +30,12 @@ delta_D = 40
 Gamma = 40
 
 blob = Blob(R_b, z, delta_D, Gamma, B, spectrum_norm, spectrum_dict)
+blob.set_gamma_size(600)
+
+# for the scattering on point source we will need a blob with a denser grid in
+# Lorentz factor, let us create a copy and increase the size of the gamma grid
+blob_ps = copy.copy(blob)
+blob_ps.set_gamma_size(1000)
 
 # DT parameters of Finke 2016
 L_disk = 2 * 1e46 * u.Unit("erg s-1")
@@ -42,35 +49,27 @@ ps_dt = PointSourceBehindJet(dt.xi_dt * L_disk, dt.epsilon_dt)
 # EC definition
 # - near the DT, to be compared with the reference
 r_near = 1e18 * u.cm
-blob.set_gamma_size(600)
 ec_near = ExternalCompton(blob, dt, r=r_near)
 
 # - far from the DT, to be compared with the point-source approximation
 r_far = 1e22 * u.cm
-blob.set_gamma_size(600)
 ec_far = ExternalCompton(blob, dt, r=r_far)
-blob.set_gamma_size(800)
-ec_ps = ExternalCompton(blob, ps_dt, r=r_far)
+ec_ps = ExternalCompton(blob_ps, ps_dt, r=r_far)
 
-nu_ec = np.logspace(16, 29, 100) * u.Hz
-sed_ec_near = ec_near.sed_flux(nu_ec)
-sed_ec_far = ec_far.sed_flux(nu_ec)
-sed_ec_ps = ec_ps.sed_flux(nu_ec)
-
+nu_ec = np.logspace(16, 29, 40) * u.Hz
+sed_ec_near = time_sed_flux(ec_near, nu_ec)
+sed_ec_far = time_sed_flux(ec_far, nu_ec)
+sed_ec_ps = time_sed_flux(ec_ps, nu_ec)
 
 # reproduce Figure 11 of Finke 2016 with agnpy
-data_file_ref_dt_near = pkg_resources.resource_filename(
+data_ec_dt_finke = pkg_resources.resource_filename(
     "agnpy", "data/reference_seds/finke_2016/figure_11/ec_dt_r_1e18.txt"
 )
-data_ref = np.loadtxt(data_file_ref_dt_near, delimiter=",")
-nu_ref = data_ref[:, 0] * u.Hz
-# make a denser frequency grid with intermediate points in log-scale
-nu_denser = np.append(nu_ref, np.sqrt(nu_ref[1:] * nu_ref[:-1]))
-nu = np.sort(nu_denser)
-sed_ref = data_ref[:, 1] * u.Unit("erg cm-2 s-1")
 
-# compute agnpy SEDs on the denser frequency grid
-sed_ec_near_finke = time_function_call(ec_near.sed_flux, nu)
+ec_nu_range = [nu_ec[0], nu_ec[-1]]
+nu_ref, sed_ref, sed_ec_near_finke = reproduce_sed(
+    data_ec_dt_finke, ec_near, ec_nu_range
+)
 
 
 # jetset
@@ -150,8 +149,7 @@ ax3 = fig.add_subplot(spec[1, 0], sharex=ax1)
 ax4 = fig.add_subplot(spec[1, 1], sharex=ax2, sharey=ax3)
 
 # SED near the DT
-# ax1.loglog(nu_ec, sed_ec_near, ls="-", lw=2.1, color="crimson")
-ax1.loglog(nu, sed_ec_near_finke, ls="-", lw=2.1, color="crimson")
+ax1.loglog(nu_ref, sed_ec_near_finke, ls="-", lw=2.1, color="crimson", label="agnpy")
 ax1.loglog(
     nu_ref, sed_ref, ls="--", color="k", label="Fig. 11, Finke (2016)",
 )
@@ -172,9 +170,7 @@ ax2.legend(loc="best", fontsize=10)
 ax2.set_title("EC on ring DT, " + r"$r=10^{22}\,{\rm cm} \gg R_{\rm DT}$")
 
 # plot the deviation from the references in the bottom panel
-# remove every other value from the SED to be compared with the reference
-# as it has been calculated on the finer frequency grid
-deviation_ref = sed_ec_near_finke[::2] / sed_ref - 1
+deviation_ref = sed_ec_near_finke / sed_ref - 1
 deviation_jetset_near = sed_ec_near / sed_ec_near_jetset - 1
 
 ax3.grid(False)

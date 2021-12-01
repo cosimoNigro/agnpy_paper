@@ -2,6 +2,7 @@
 import numpy as np
 import astropy.units as u
 import pkg_resources
+import copy
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 from agnpy.emission_regions import Blob
@@ -9,7 +10,7 @@ from agnpy.targets import PointSourceBehindJet, SphericalShellBLR
 from agnpy.compton import ExternalCompton
 from agnpy.utils.plot import load_mpl_rc, sed_x_label, sed_y_label
 from pathlib import Path
-from utils import time_function_call
+from utils import reproduce_sed, time_sed_flux
 
 
 # agnpy
@@ -29,6 +30,12 @@ delta_D = 40
 Gamma = 40
 
 blob = Blob(R_b, z, delta_D, Gamma, B, spectrum_norm, spectrum_dict)
+blob.set_gamma_size(600)
+
+# for the scattering on point source we will need a blob with a denser grid in
+# Lorentz factor, let us create a copy and increase the size of the gamma grid
+blob_ps = copy.copy(blob)
+blob_ps.set_gamma_size(900)
 
 # BLR parameters of Finke 2016
 L_disk = 2 * 1e46 * u.Unit("erg s-1")
@@ -43,36 +50,25 @@ ps_blr = PointSourceBehindJet(blr.xi_line * L_disk, blr.epsilon_line)
 # EC definition
 # - inside the BLR, to be compared with the references
 r_in = 1e16 * u.cm
-blob.set_gamma_size(350)
 ec_in = ExternalCompton(blob, blr, r=r_in)
 
 # - out of the BLR, to be compared with the point-source approximation
 r_out = 1e20 * u.cm
-blob.set_gamma_size(350)
 ec_out = ExternalCompton(blob, blr, r=r_out)
-blob.set_gamma_size(700)
-ec_ps = ExternalCompton(blob, ps_blr, r=r_out)
+ec_ps = ExternalCompton(blob_ps, ps_blr, r=r_out)
 
-nu_ec = np.logspace(16, 28, 100) * u.Hz
-sed_ec_in = ec_in.sed_flux(nu_ec)
-sed_ec_out = ec_out.sed_flux(nu_ec)
-sed_ec_ps = ec_ps.sed_flux(nu_ec)
-
+nu_ec = np.logspace(16, 28, 40) * u.Hz
+sed_ec_in = time_sed_flux(ec_in, nu_ec)
+sed_ec_out = time_sed_flux(ec_out, nu_ec)
+sed_ec_ps = time_sed_flux(ec_ps, nu_ec)
 
 # reproduce Figure 10 of Finke 2016 with agnpy
-data_file_ref_blr = pkg_resources.resource_filename(
+data_ec_blr_finke = pkg_resources.resource_filename(
     "agnpy", "data/reference_seds/finke_2016/figure_10/ec_blr_r_1e16.txt"
 )
-# reference SED, Figure 10 Finke Dermer
-data_ref = np.loadtxt(data_file_ref_blr, delimiter=",")
-nu_ref = data_ref[:, 0] * u.Hz
-# make a denser frequency grid with intermediate points in log-scale
-nu_denser = np.append(nu_ref, np.sqrt(nu_ref[1:] * nu_ref[:-1]))
-nu = np.sort(nu_denser)
-sed_ref = data_ref[:, 1] * u.Unit("erg cm-2 s-1")
 
-# compute agnpy SEDs on the denser frequency grid
-sed_ec_in_finke = time_function_call(ec_in.sed_flux, nu)
+ec_nu_range = [nu_ec[0], nu_ec[-1]]
+nu_ref, sed_ref, sed_ec_in_finke = reproduce_sed(data_ec_blr_finke, ec_in, ec_nu_range)
 
 
 # jetset
@@ -139,7 +135,7 @@ jet.eval()
 sed_ec_out_jetset = jet.spectral_components.EC_BLR.SED.nuFnu
 
 
-# figure 9
+# make figure 9
 load_mpl_rc()
 plt.rcParams["text.usetex"] = True
 
@@ -152,8 +148,7 @@ ax3 = fig.add_subplot(spec[1, 0], sharex=ax1)
 ax4 = fig.add_subplot(spec[1, 1], sharex=ax2, sharey=ax3)
 
 # SED inside the BLR
-# ax1.loglog(nu_ec, sed_ec_in, ls="-", lw=2.1, color="crimson")
-ax1.loglog(nu, sed_ec_in_finke, ls="-", lw=2.1, color="crimson", label="agnpy")
+ax1.loglog(nu_ec, sed_ec_in, ls="-", lw=2.1, color="crimson", label="agnpy")
 ax1.loglog(nu_ref, sed_ref, ls="--", color="k", label="Fig. 10, Finke (2016)")
 ax1.loglog(nu_ec, sed_ec_in_jetset, ls="--", color="dodgerblue", label="jetset")
 ax1.set_ylabel(sed_y_label)
@@ -180,9 +175,7 @@ ax2.set_title(
 )
 
 # plot the deviation from the references in the bottom panel
-# remove every other value from the SED to be compared with the reference
-# as it has been calculated on the finer frequency grid
-deviation_ref = sed_ec_in_finke[::2] / sed_ref - 1
+deviation_ref = sed_ec_in_finke / sed_ref - 1
 deviation_jetset_in = sed_ec_in / sed_ec_in_jetset - 1
 
 ax3.grid(False)
