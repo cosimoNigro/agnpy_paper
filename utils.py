@@ -63,7 +63,6 @@ def time_tau(absorption, nu):
         logging.info("timing absorption calculation")
         logging.info(f"Abs. grid with {absorption.mu_size} zenith (mu) points")
         logging.info(f"Abs. grid with {absorption.phi_size} azimuths (phi) points")
-        logging.info(f"Abs. grid with {absorption.phi_size} azimuths (phi) points")
         logging.info(f"Abs. grid with {absorption.l_size} distance points")
         logging.info(f"computed on {len(nu)} frequency points")
         return time_function_call(absorption.tau, nu)
