@@ -23,5 +23,5 @@ dependencies:
   - swig
   - pip
   - pip:
-    - agnpy==0.1.2
+    - agnpy==0.1.3
     - git+https://github.com/andreatramacere/jetset.git@1.2.0rc10

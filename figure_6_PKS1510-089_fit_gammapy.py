@@ -110,6 +110,7 @@ class AgnpyEC(SpectralModel):
         eps_dt = 2.7 * (k_B * T_dt / mec2).to_value("")
 
         nu = energy.to("Hz", equivalencies=u.spectral())
+
         # non-thermal components
         sed_synch = Synchrotron.evaluate_sed_flux(
             nu,
@@ -166,6 +167,7 @@ class AgnpyEC(SpectralModel):
             gamma_max,
             gamma=gamma_to_integrate,
         )
+
         # thermal components
         sed_bb_disk = SSDisk.evaluate_multi_T_bb_norm_sed(
             nu, z, L_disk, M_BH, m_dot, R_in, R_out, d_L
@@ -173,7 +175,9 @@ class AgnpyEC(SpectralModel):
         sed_bb_dt = RingDustTorus.evaluate_bb_norm_sed(
             nu, z, xi_dt * L_disk, T_dt, R_dt, d_L
         )
+
         sed = sed_synch + sed_ssc + sed_ec_dt + sed_bb_disk + sed_bb_dt
+
         return (sed / energy ** 2).to("1 / (cm2 eV s)")
 
 
@@ -181,10 +185,12 @@ SPECTRAL_MODEL_REGISTRY.append(AgnpyEC)
 
 
 logging.info("reading PKS1510-089 SED from agnpy datas")
+
 sed_path = pkg_resources.resource_filename(
     "agnpy", "data/mwl_seds/PKS1510-089_2015b.ecsv"
 )
 flux_points = FluxPoints.read(sed_path)
+
 # array of systematic errors, will just be summed in quadrature to the statistical error
 # we assume
 # - 30% on VHE gamma-ray instruments
@@ -195,6 +201,7 @@ x = flux_points.table["e_ref"]
 y = flux_points.table["e2dnde"]
 y_err_stat = flux_points.table["e2dnde_errn"]
 y_err_syst = np.zeros(len(x))
+
 # define energy ranges
 e_vhe = 100 * u.GeV
 e_he = 0.1 * u.GeV
@@ -204,28 +211,31 @@ vhe_gamma = x >= e_vhe
 he_gamma = (x >= e_he) * (x < e_vhe)
 x_ray = (x >= e_x_ray_min) * (x < e_x_ray_max)
 uv_to_radio = x < e_x_ray_min
+
 # declare systematics
 y_err_syst[vhe_gamma] = 0.30
 y_err_syst[he_gamma] = 0.10
 y_err_syst[x_ray] = 0.10
 y_err_syst[uv_to_radio] = 0.05
 y_err_syst = y * y_err_syst
+
 # sum in quadrature the errors
 flux_points.table["e2dnde_err"] = np.sqrt(y_err_stat ** 2 + y_err_syst ** 2)
 flux_points = flux_points.to_sed_type("dnde")
 
 # declare a model
 agnpy_ec = AgnpyEC()
-# global parameters of the blob and the DT
+
+# initialise parameters
 z = 0.361
 d_L = Distance(z=z).to("cm")
-# blob
+# - blob
 Gamma = 20
 delta_D = 25
 Beta = np.sqrt(1 - 1 / np.power(Gamma, 2))  # jet relativistic speed
 mu_s = (1 - 1 / (Gamma * delta_D)) / Beta  # viewing angle
 B = 0.35 * u.G
-# disk
+# - disk
 L_disk = 6.7e45 * u.Unit("erg s-1")  # disk luminosity
 M_BH = 5.71 * 1e7 * M_sun
 eta = 1 / 12
@@ -233,13 +243,14 @@ m_dot = (L_disk / (eta * c ** 2)).to("g s-1")
 R_g = ((G * M_BH) / c ** 2).to("cm")
 R_in = 6 * R_g
 R_out = 10000 * R_g
-# DT
+# - DT
 xi_dt = 0.6  # fraction of disk luminosity reprocessed by the DT
 T_dt = 1e3 * u.K
 R_dt = 6.47 * 1e18 * u.cm
-# size and location of the emission region
+# - size and location of the emission region
 t_var = 0.5 * u.d
 r = 6e17 * u.cm
+
 # instance of the model wrapping angpy functionalities
 # - AGN parameters
 # -- distances
@@ -292,27 +303,33 @@ dataset_ec = FluxPointsDataset(model, flux_points)
 E_min_fit = (1e11 * u.Hz).to("eV", equivalencies=u.spectral())
 dataset_ec.mask_fit = dataset_ec.data.energy_ref > E_min_fit
 
-logging.info("performing the fit and estimating the error on the parameters")
+logging.info("performing the fit")
+
 # directory to store the checks performed on the fit
-fit_check_dir = "figures/figure_7_checks_gammapy_fit"
+fit_check_dir = "figures/figure_6_checks_gammapy_fit"
 Path(fit_check_dir).mkdir(parents=True, exist_ok=True)
+
 # define the fitter
 fitter = Fit([dataset_ec])
 results = time_function_call(fitter.run, optimize_opts={"print_level": 1})
+
 print(results)
 print(agnpy_ec.parameters.to_table())
+
 # plot best-fit model and covariance
 flux_points.plot(energy_unit="eV", energy_power=2)
 agnpy_ec.plot(energy_range=[1e-6, 1e15] * u.eV, energy_unit="eV", energy_power=2)
 plt.ylim([10 ** (-13.5), 10 ** (-7.5)])
 plt.savefig(f"{fit_check_dir}/best_fit.png")
 plt.close()
+
 agnpy_ec.covariance.plot_correlation()
 plt.savefig(f"{fit_check_dir}/correlation_matrix.png")
 plt.close()
 
 logging.info("plot the final model with the individual components")
-# plot the best fit model with the individual components
+
+# blob definition
 k_e = 10 ** agnpy_ec.log10_k_e.value * u.Unit("cm-3")
 p1 = agnpy_ec.p1.value
 p2 = agnpy_ec.p2.value
@@ -325,7 +342,6 @@ delta_D = agnpy_ec.delta_D.value
 R_b = (
     c * agnpy_ec.t_var.quantity * agnpy_ec.delta_D.quantity / (1 + agnpy_ec.z.quantity)
 ).to("cm")
-# blob definition
 parameters = {
     "p1": p1,
     "p2": p2,
@@ -334,6 +350,7 @@ parameters = {
     "gamma_max": gamma_max,
 }
 spectrum_dict = {"type": "BrokenPowerLaw", "parameters": parameters}
+
 blob = Blob(
     R_b,
     z,
@@ -345,6 +362,7 @@ blob = Blob(
     spectrum_norm_type="differential",
     gamma_size=500,
 )
+
 print(blob)
 print(f"jet power in particles: {blob.P_jet_e:.2e}")
 print(f"jet power in B: {blob.P_jet_B:.2e}")
@@ -356,6 +374,7 @@ m_dot = agnpy_ec.m_dot.value * u.Unit("g s-1")
 eta = (L_disk / (m_dot * c ** 2)).to_value("")
 R_in = agnpy_ec.R_in.value * u.cm
 R_out = agnpy_ec.R_out.value * u.cm
+
 disk = SSDisk(M_BH, L_disk, eta, R_in, R_out)
 dt = RingDustTorus(L_disk, xi_dt, T_dt, R_dt=R_dt)
 
@@ -363,6 +382,7 @@ dt = RingDustTorus(L_disk, xi_dt, T_dt, R_dt=R_dt)
 synch = Synchrotron(blob, ssa=True)
 ssc = SynchrotronSelfCompton(blob, synch)
 ec_dt = ExternalCompton(blob, dt, r)
+
 # SEDs
 nu = np.logspace(9, 27, 200) * u.Hz
 synch_sed = synch.sed_flux(nu)
@@ -372,8 +392,11 @@ disk_bb_sed = disk.sed_flux(nu, z)
 dt_bb_sed = dt.sed_flux(nu, z)
 total_sed = synch_sed + ssc_sed + ec_dt_sed + disk_bb_sed + dt_bb_sed
 
+
+# make figure 6
 load_mpl_rc()
 plt.rcParams["text.usetex"] = True
+
 fig, ax = plt.subplots()
 ax.loglog(
     nu / (1 + z), total_sed, ls="-", lw=2.1, color="crimson", label="agnpy, total"
@@ -413,7 +436,7 @@ ax.loglog(
     color="dimgray",
     label="agnpy, DT blackbody",
 )
-# systematics error in gray
+# systematic errors in gray
 ax.errorbar(
     x.to("Hz", equivalencies=u.spectral()).value,
     y,
@@ -423,7 +446,7 @@ ax.errorbar(
     color="gray",
     label="",
 )
-# statistics error in black
+# statistical errors in black
 ax.errorbar(
     x.to("Hz", equivalencies=u.spectral()).value,
     y,
@@ -433,13 +456,15 @@ ax.errorbar(
     color="k",
     label="PKS 1510-089, Ahnen et al. (2017), period B",
 )
+
 ax.set_xlabel(sed_x_label)
 ax.set_ylabel(sed_y_label)
 ax.set_xlim([1e9, 1e29])
-ax.set_ylim([10 ** (-13.5), 10 ** (-7.5)])
+ax.set_ylim([1e-13, 1e-7])
 ax.legend(
     loc="upper center", fontsize=10, ncol=2,
 )
 Path("figures").mkdir(exist_ok=True)
+
 fig.savefig("figures/figure_6_gammapy_fit.png")
 fig.savefig("figures/figure_6_gammapy_fit.pdf")

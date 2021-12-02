@@ -137,6 +137,7 @@ class AgnpyEC(model.RegriddableModel1D):
             T_dt,
             R_dt,
         ) = pars
+
         # add units, scale quantities
         x *= u.Hz
         k_e = 10 ** log10_k_e * u.Unit("cm-3")
@@ -212,6 +213,7 @@ class AgnpyEC(model.RegriddableModel1D):
             gamma_max,
             gamma=gamma_to_integrate,
         )
+
         # thermal components
         sed_bb_disk = SSDisk.evaluate_multi_T_bb_norm_sed(
             x, z, L_disk, M_BH, m_dot, R_in, R_out, d_L
@@ -219,17 +221,21 @@ class AgnpyEC(model.RegriddableModel1D):
         sed_bb_dt = RingDustTorus.evaluate_bb_norm_sed(
             x, z, xi_dt * L_disk, T_dt, R_dt, d_L
         )
+
         return sed_synch + sed_ssc + sed_ec_dt + sed_bb_disk + sed_bb_dt
 
 
 logging.info("reading PKS1510-089 SED from agnpy datas")
+
 sed_path = pkg_resources.resource_filename(
     "agnpy", "data/mwl_seds/PKS1510-089_2015b.ecsv"
 )
 sed_table = Table.read(sed_path)
+
 x = sed_table["e_ref"].to("Hz", equivalencies=u.spectral())
 y = sed_table["e2dnde"]
 y_err_stat = sed_table["e2dnde_errn"]
+
 # array of systematic errors, will just be summed in quadrature to the statistical error
 # we assume
 # - 30% on VHE gamma-ray instruments
@@ -237,6 +243,7 @@ y_err_stat = sed_table["e2dnde_errn"]
 # - 10% on X-ray instruments
 # - 5% on lower-energy instruments
 y_err_syst = np.zeros(len(x))
+
 # define energy ranges
 nu_vhe = (100 * u.GeV).to("Hz", equivalencies=u.spectral())
 nu_he = (0.1 * u.GeV).to("Hz", equivalencies=u.spectral())
@@ -246,27 +253,30 @@ vhe_gamma = x >= nu_vhe
 he_gamma = (x >= nu_he) * (x < nu_vhe)
 x_ray = (x >= nu_x_ray_min) * (x < nu_x_ray_max)
 uv_to_radio = x < nu_x_ray_min
+
 # declare systematics
 y_err_syst[vhe_gamma] = 0.30
 y_err_syst[he_gamma] = 0.10
 y_err_syst[x_ray] = 0.10
 y_err_syst[uv_to_radio] = 0.05
 y_err_syst = y * y_err_syst
+
 # define the data1D object containing it
 sed = data.Data1D("sed", x, y, staterror=y_err_stat, syserror=y_err_syst)
 
 # declare a model
 agnpy_ec = AgnpyEC()
-# global parameters of the blob and the DT
+
+# initialise parameters
 z = 0.361
 d_L = Distance(z=z).to("cm")
-# blob
+# - blob
 Gamma = 20
 delta_D = 25
 Beta = np.sqrt(1 - 1 / np.power(Gamma, 2))  # jet relativistic speed
 mu_s = (1 - 1 / (Gamma * delta_D)) / Beta  # viewing angle
 B = 0.35 * u.G
-# disk
+# - disk
 L_disk = 6.7e45 * u.Unit("erg s-1")  # disk luminosity
 M_BH = 5.71 * 1e7 * M_sun
 eta = 1 / 12
@@ -274,13 +284,14 @@ m_dot = (L_disk / (eta * c ** 2)).to("g s-1")
 R_g = ((G * M_BH) / c ** 2).to("cm")
 R_in = 6 * R_g
 R_out = 10000 * R_g
-# DT
+# - DT
 xi_dt = 0.6  # fraction of disk luminosity reprocessed by the DT
 T_dt = 1e3 * u.K
 R_dt = 6.47 * 1e18 * u.cm
-# size and location of the emission region
+# - size and location of the emission region
 t_var = 0.5 * u.d
 r = 6e17 * u.cm
+
 # instance of the model wrapping angpy functionalities
 # - AGN parameters
 # -- distances
@@ -327,18 +338,21 @@ agnpy_ec.log10_gamma_max = np.log10(3e4)
 agnpy_ec.log10_gamma_max.freeze()
 
 logging.info("performing the fit")
+
 # directory to store the checks performed on the fit
-fit_check_dir = "figures/figure_7_checks_sherpa_fit"
+fit_check_dir = "figures/figure_6_checks_sherpa_fit"
 Path(fit_check_dir).mkdir(parents=True, exist_ok=True)
+
 # fit using the Levenberg-Marquardt optimiser
 fitter = Fit(sed, agnpy_ec, stat=Chi2(), method=LevMar())
 min_x = 1e11 * u.Hz
 max_x = 1e30 * u.Hz
 sed.notice(min_x, max_x)
-
 results = time_function_call(fitter.fit)
+
 print("fit succesful?", results.succeeded)
 print(results.format())
+
 # plot final model without components
 nu = np.logspace(10, 30, 300)
 plt.errorbar(sed.x, sed.y, yerr=sed.get_error(), marker=".", ls="")
@@ -349,7 +363,7 @@ plt.savefig(f"{fit_check_dir}/best_fit.png")
 plt.close()
 
 logging.info("plot the final model with the individual components")
-# plot the best fit model with the individual components
+
 k_e = 10 ** agnpy_ec.log10_k_e.val * u.Unit("cm-3")
 p1 = agnpy_ec.p1.val
 p2 = agnpy_ec.p2.val
@@ -360,7 +374,6 @@ B = 10 ** agnpy_ec.log10_B.val * u.G
 r = 10 ** agnpy_ec.log10_r.val * u.cm
 delta_D = agnpy_ec.delta_D.val
 R_b = c.to_value("cm s-1") * agnpy_ec.t_var.val * delta_D / (1 + z) * u.cm
-# blob definition
 parameters = {
     "p1": p1,
     "p2": p2,
@@ -369,6 +382,8 @@ parameters = {
     "gamma_max": gamma_max,
 }
 spectrum_dict = {"type": "BrokenPowerLaw", "parameters": parameters}
+
+# blob
 blob = Blob(
     R_b,
     z,
@@ -380,6 +395,7 @@ blob = Blob(
     spectrum_norm_type="differential",
     gamma_size=500,
 )
+
 print(blob)
 print(f"jet power in particles: {blob.P_jet_e:.2e}")
 print(f"jet power in B: {blob.P_jet_B:.2e}")
@@ -398,6 +414,7 @@ dt = RingDustTorus(L_disk, xi_dt, T_dt, R_dt=R_dt)
 synch = Synchrotron(blob, ssa=True)
 ssc = SynchrotronSelfCompton(blob, synch)
 ec_dt = ExternalCompton(blob, dt, r)
+
 # SEDs
 nu = np.logspace(9, 27, 200) * u.Hz
 synch_sed = synch.sed_flux(nu)
@@ -407,9 +424,12 @@ disk_bb_sed = disk.sed_flux(nu, z)
 dt_bb_sed = dt.sed_flux(nu, z)
 total_sed = synch_sed + ssc_sed + ec_dt_sed + disk_bb_sed + dt_bb_sed
 
+
+# make figure 6
 load_mpl_rc()
 plt.rcParams["text.usetex"] = True
 fig, ax = plt.subplots()
+
 ax.loglog(
     nu / (1 + z), total_sed, ls="-", lw=2.1, color="crimson", label="agnpy, total"
 )
@@ -448,11 +468,11 @@ ax.loglog(
     color="dimgray",
     label="agnpy, DT blackbody",
 )
-# systematics error in gray
+# systematic errors in gray
 ax.errorbar(
     sed.x, sed.y, yerr=sed.get_syserror(), marker=",", ls="", color="gray",
 )
-# statistics error in black
+# statistical errors in black
 ax.errorbar(
     sed.x,
     sed.y,
@@ -462,13 +482,15 @@ ax.errorbar(
     color="k",
     label="PKS 1510-089, Ahnen et al. (2017), period B",
 )
+
 ax.set_xlabel(sed_x_label)
 ax.set_ylabel(sed_y_label)
 ax.set_xlim([1e9, 1e29])
-ax.set_ylim([10 ** (-13.5), 10 ** (-7.5)])
+ax.set_ylim([1e-13, 1e-7])
 ax.legend(
     loc="upper center", fontsize=10, ncol=2,
 )
+
 Path("figures").mkdir(exist_ok=True)
 fig.savefig("figures/figure_6_sherpa_fit.png")
 fig.savefig("figures/figure_6_sherpa_fit.pdf")

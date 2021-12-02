@@ -85,6 +85,7 @@ class AgnpySSC(model.RegriddableModel1D):
             log10_B,
             t_var,
         ) = pars
+
         # add units, scale quantities
         x *= u.Hz
         k_e = 10 ** log10_k_e * u.Unit("cm-3")
@@ -94,6 +95,7 @@ class AgnpySSC(model.RegriddableModel1D):
         B = 10 ** log10_B * u.G
         d_L *= u.cm
         R_b = c.to_value("cm s-1") * t_var * delta_D / (1 + z) * u.cm
+
         sed_synch = Synchrotron.evaluate_sed_flux(
             x,
             z,
@@ -124,16 +126,19 @@ class AgnpySSC(model.RegriddableModel1D):
             gamma_min,
             gamma_max,
         )
+
         return sed_synch + sed_ssc
 
 
 logging.info("reading Mrk421 SED from agnpy datas")
-# read the 1D data
+
 sed_path = pkg_resources.resource_filename("agnpy", "data/mwl_seds/Mrk421_2011.ecsv")
+
 sed_table = Table.read(sed_path)
 x = sed_table["e_ref"].to("Hz", equivalencies=u.spectral())
 y = sed_table["e2dnde"]
 y_err_stat = sed_table["e2dnde_err"]
+
 # array of systematic errors, will just be summed in quadrature to the statistical error
 # we assume
 # - 30% on VHE gamma-ray instruments
@@ -141,6 +146,7 @@ y_err_stat = sed_table["e2dnde_err"]
 # - 10% on X-ray instruments
 # - 5% on lower-energy instruments
 y_err_syst = np.zeros(len(x))
+
 # define energy ranges
 nu_vhe = (100 * u.GeV).to("Hz", equivalencies=u.spectral())
 nu_he = (0.1 * u.GeV).to("Hz", equivalencies=u.spectral())
@@ -150,17 +156,20 @@ vhe_gamma = x >= nu_vhe
 he_gamma = (x >= nu_he) * (x < nu_vhe)
 x_ray = (x >= nu_x_ray_min) * (x < nu_x_ray_max)
 uv_to_radio = x < nu_x_ray_min
+
 # declare systematics
 y_err_syst[vhe_gamma] = 0.30
 y_err_syst[he_gamma] = 0.10
 y_err_syst[x_ray] = 0.10
 y_err_syst[uv_to_radio] = 0.05
 y_err_syst = y * y_err_syst
+
 # define the data1D object containing it
 sed = data.Data1D("sed", x, y, staterror=y_err_stat, syserror=y_err_syst)
 
 # declare a model
 agnpy_ssc = AgnpySSC()
+
 # initialise parameters
 # parameters from Table 4 and Figure 11 of Abdo 2011
 R_b = 5.2 * 1e16 * u.cm
@@ -186,10 +195,13 @@ agnpy_ssc.log10_gamma_min.freeze()
 agnpy_ssc.log10_gamma_max = np.log10(1e6)
 agnpy_ssc.log10_gamma_max.freeze()
 
+
 logging.info("performing the fit")
+
 # directory to store the checks performed on the fit
-fit_check_dir = "figures/figure_6_checks_sherpa_fit"
+fit_check_dir = "figures/figure_5_checks_sherpa_fit"
 Path(fit_check_dir).mkdir(parents=True, exist_ok=True)
+
 # fit using the Levenberg-Marquardt optimiser
 fitter = Fit(sed, agnpy_ssc, stat=Chi2(), method=LevMar())
 min_x = 1e11 * u.Hz
@@ -199,6 +211,7 @@ sed.notice(min_x, max_x)
 results = time_function_call(fitter.fit)
 print("fit succesful?", results.succeeded)
 print(results.format())
+
 # plot final model without components
 nu = np.logspace(10, 30, 300)
 plt.errorbar(sed.x, sed.y, yerr=sed.get_error(), marker=".", ls="")
@@ -209,6 +222,7 @@ plt.savefig(f"{fit_check_dir}/best_fit.png")
 plt.close()
 
 logging.info("plot the final model with the individual components")
+
 k_e = 10 ** agnpy_ssc.log10_k_e.val * u.Unit("cm-3")
 p1 = agnpy_ssc.p1.val
 p2 = agnpy_ssc.p2.val
@@ -226,9 +240,11 @@ parameters = {
     "gamma_max": gamma_max,
 }
 spectrum_dict = {"type": "BrokenPowerLaw", "parameters": parameters}
+
 blob = Blob(
     R_b, z, delta_D, delta_D, B, k_e, spectrum_dict, spectrum_norm_type="differential"
 )
+
 print(blob)
 print(f"jet power in particles: {blob.P_jet_e:.2e}")
 print(f"jet power in B: {blob.P_jet_B:.2e}")
@@ -236,14 +252,18 @@ print(f"jet power in B: {blob.P_jet_B:.2e}")
 # compute the obtained emission region
 synch = Synchrotron(blob)
 ssc = SynchrotronSelfCompton(blob)
+
 # make a finer grid to compute the SED
 nu = np.logspace(10, 30, 300) * u.Hz
 synch_sed = synch.sed_flux(nu)
 ssc_sed = ssc.sed_flux(nu)
 
+
+# make figure 5
 load_mpl_rc()
 plt.rcParams["text.usetex"] = True
 fig, ax = plt.subplots()
+
 ax.loglog(
     nu / (1 + z),
     synch_sed + ssc_sed,
@@ -263,11 +283,11 @@ ax.loglog(
 ax.loglog(
     nu / (1 + z), ssc_sed, ls="--", lw=1.3, color="dodgerblue", label="agnpy, SSC"
 )
-# systematics error in gray
+# systematic errors in gray
 ax.errorbar(
     sed.x, sed.y, yerr=sed.get_syserror(), marker=",", ls="", color="gray",
 )
-# statistics error in black
+# statistical errors in black
 ax.errorbar(
     sed.x,
     sed.y,
@@ -277,11 +297,13 @@ ax.errorbar(
     color="k",
     label="Mrk 421, Abdo et al. (2011)",
 )
+
 ax.set_xlabel(sed_x_label)
 ax.set_ylabel(sed_y_label)
 ax.set_xlim([1e9, 1e29])
 ax.set_ylim([1e-14, 1e-9])
 ax.legend(loc="best")
+
 Path("figures").mkdir(exist_ok=True)
 fig.savefig("figures/figure_5_sherpa_fit.png")
 fig.savefig("figures/figure_5_sherpa_fit.pdf")
