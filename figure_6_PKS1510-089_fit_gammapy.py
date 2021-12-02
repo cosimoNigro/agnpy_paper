@@ -460,7 +460,7 @@ ax.errorbar(
 ax.set_xlabel(sed_x_label)
 ax.set_ylabel(sed_y_label)
 ax.set_xlim([1e9, 1e29])
-ax.set_ylim([1e-13, 1e-7])
+ax.set_ylim([10 ** (-13.5), 10 ** (-7.5)])
 ax.legend(
     loc="upper center", fontsize=10, ncol=2,
 )
