@@ -13,10 +13,12 @@ WORKDIR /root/agnpy_paper
 
 # install the main environment
 RUN mamba env create -f agnpy_paper.yml
+RUN echo "source activate agnpy-paper" >> ~/.bashrc
+ENV PATH /opt/conda/envs/$CONDA_ENV/bin:$PATH
 
-# back to the workdir with the paper
+# define work dir
 WORKDIR /root/agnpy_paper
+ENV DOCKER_INSIDE "True"
 
 # activate the environment by default
-ENV PATH /opt/conda/envs/$CONDA_ENV/bin:$PATH
 CMD ["/bin/bash"]
