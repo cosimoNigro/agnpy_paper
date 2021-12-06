@@ -54,7 +54,7 @@ python figure_2_synchrotron_example.py
 
 ## Docker container
 To conserve the exact computational environment of the paper we created a Docker container.    
-The container is [abailable on Dockerhub](https://hub.docker.com/r/cosimonigro/agnpy_paper).
+The container is [available on Dockerhub](https://hub.docker.com/r/cosimonigro/agnpy_paper).
 
 ### build the container yourself
 After you have installed docker, to build the container using the `Dockerfile` in this repository type:
