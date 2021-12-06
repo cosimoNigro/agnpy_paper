@@ -6,7 +6,7 @@ ARG CONDA_ENV=agnpy-paper
 RUN apt-get update -y
 RUN apt-get install -y build-essential
 # latex is needed to properly render plot labels
-RUN apt-get install -y texlive-full
+RUN apt-get install -y dvipng texlive-latex-extra texlive-fonts-recommended cm-super
 
 ADD . /root/agnpy_paper
 WORKDIR /root/agnpy_paper
