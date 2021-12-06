@@ -1,11 +1,11 @@
-## `agnpy`: an open-source python package modelling the radiative processes of jetted active galactic nuclei
+# `agnpy`: an open-source python package modelling the radiative processes of jetted active galactic nuclei
 
 This repository contains the scripts to generate the figures included in the paper 
 "`agnpy`: an open-source python package modelling the radiative processes of jetted active galactic nuclei".
 
 This repository is also archived in zenodo [![DOI](https://zenodo.org/badge/318151275.svg)](https://zenodo.org/badge/latestdoi/318151275)
 
-## content of the repository
+## Content of the repository
 The repository contains the following files:
 ```
 .
@@ -47,7 +47,7 @@ and activate it
 ```shell
 source activate agnpy_paper
 ```
-after activating the environment each script can be executed via the command line with
+after activating the environment, each script can be executed via the command line with
 ```shell
 python figure_2_synchrotron_example.py
 ```
