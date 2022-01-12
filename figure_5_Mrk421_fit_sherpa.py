@@ -15,7 +15,7 @@ from agnpy.emission_regions import Blob
 from agnpy.spectra import BrokenPowerLaw
 from agnpy.synchrotron import Synchrotron
 from agnpy.compton import SynchrotronSelfCompton
-from agnpy.utils.plot import load_mpl_rc, sed_x_label, sed_y_label
+from agnpy.utils.plot import sed_x_label, sed_y_label
 
 # import sherpa classes
 from sherpa.models import model
@@ -198,10 +198,6 @@ agnpy_ssc.log10_gamma_max.freeze()
 
 logging.info("performing the fit")
 
-# directory to store the checks performed on the fit
-fit_check_dir = "figures/figure_5_checks_sherpa_fit"
-Path(fit_check_dir).mkdir(parents=True, exist_ok=True)
-
 # fit using the Levenberg-Marquardt optimiser
 fitter = Fit(sed, agnpy_ssc, stat=Chi2(), method=LevMar())
 min_x = 1e11 * u.Hz
@@ -212,14 +208,6 @@ results = time_function_call(fitter.fit)
 print("fit succesful?", results.succeeded)
 print(results.format())
 
-# plot final model without components
-nu = np.logspace(10, 30, 300)
-plt.errorbar(sed.x, sed.y, yerr=sed.get_error(), marker=".", ls="")
-plt.loglog(nu, agnpy_ssc(nu))
-plt.xlabel(sed_x_label)
-plt.ylabel(sed_y_label)
-plt.savefig(f"{fit_check_dir}/best_fit.png")
-plt.close()
 
 logging.info("plot the final model with the individual components")
 
@@ -260,8 +248,6 @@ ssc_sed = ssc.sed_flux(nu)
 
 
 # make figure 5
-load_mpl_rc()
-plt.rcParams["text.usetex"] = True
 fig, ax = plt.subplots()
 
 ax.loglog(
@@ -302,7 +288,7 @@ ax.set_xlabel(sed_x_label)
 ax.set_ylabel(sed_y_label)
 ax.set_xlim([1e9, 1e29])
 ax.set_ylim([1e-14, 1e-9])
-ax.legend(loc="best")
+ax.legend(loc="best", fontsize=12)
 
 Path("figures").mkdir(exist_ok=True)
 fig.savefig("figures/figure_5_sherpa_fit.png")

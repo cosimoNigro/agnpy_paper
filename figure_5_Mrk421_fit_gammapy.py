@@ -5,7 +5,6 @@ from pathlib import Path
 import numpy as np
 import astropy.units as u
 from astropy.constants import c
-from astropy.table import Table
 from astropy.coordinates import Distance
 import matplotlib.pyplot as plt
 from utils import time_function_call
@@ -15,7 +14,7 @@ from agnpy.spectra import BrokenPowerLaw
 from agnpy.emission_regions import Blob
 from agnpy.synchrotron import Synchrotron
 from agnpy.compton import SynchrotronSelfCompton
-from agnpy.utils.plot import load_mpl_rc, sed_x_label, sed_y_label
+from agnpy.utils.plot import sed_x_label, sed_y_label
 
 # gammapy modules
 from gammapy.modeling.models import (
@@ -187,10 +186,6 @@ dataset_ssc.mask_fit = dataset_ssc.data.energy_ref > E_min_fit
 
 logging.info("performing the fit")
 
-# directory to store the checks performed on the fit
-fit_check_dir = "figures/figure_5_checks_gammapy_fit"
-Path(fit_check_dir).mkdir(parents=True, exist_ok=True)
-
 # define the fitter
 fitter = Fit([dataset_ssc])
 results = time_function_call(fitter.run, optimize_opts={"print_level": 1})
@@ -198,15 +193,6 @@ results = time_function_call(fitter.run, optimize_opts={"print_level": 1})
 print(results)
 print(agnpy_ssc.parameters.to_table())
 
-# plot best-fit model and covariance
-flux_points.plot(energy_unit="eV", energy_power=2)
-agnpy_ssc.plot(energy_range=[1e-6, 1e15] * u.eV, energy_unit="eV", energy_power=2)
-plt.savefig(f"{fit_check_dir}/best_fit.png")
-plt.close()
-
-agnpy_ssc.covariance.plot_correlation()
-plt.savefig(f"{fit_check_dir}/correlation_matrix.png")
-plt.close()
 
 logging.info("plot the final model with the individual components")
 
@@ -252,8 +238,6 @@ ssc_sed = ssc.sed_flux(nu)
 
 
 # make figure 5
-load_mpl_rc()
-plt.rcParams["text.usetex"] = True
 fig, ax = plt.subplots()
 
 ax.loglog(
@@ -301,7 +285,7 @@ ax.set_ylabel(sed_y_label)
 ax.set_xlim([1e9, 1e29])
 ax.set_ylim([1e-14, 1e-9])
 
-ax.legend(loc="best")
+ax.legend(loc="best", fontsize=12)
 Path("figures").mkdir(exist_ok=True)
 fig.savefig("figures/figure_5_gammapy_fit.png")
 fig.savefig("figures/figure_5_gammapy_fit.pdf")
