@@ -16,7 +16,7 @@ from agnpy.emission_regions import Blob
 from agnpy.synchrotron import Synchrotron
 from agnpy.compton import SynchrotronSelfCompton, ExternalCompton
 from agnpy.targets import SSDisk, RingDustTorus
-from agnpy.utils.plot import load_mpl_rc, sed_x_label, sed_y_label
+from agnpy.utils.plot import sed_x_label, sed_y_label
 
 # import sherpa classes
 from sherpa.models import model
@@ -24,8 +24,6 @@ from sherpa import data
 from sherpa.fit import Fit
 from sherpa.stats import Chi2
 from sherpa.optmethods import LevMar
-from sherpa.estmethods import Confidence
-from sherpa.plot import IntervalProjection
 
 
 # constants
@@ -339,9 +337,6 @@ agnpy_ec.log10_gamma_max.freeze()
 
 logging.info("performing the fit")
 
-# directory to store the checks performed on the fit
-fit_check_dir = "figures/figure_6_checks_sherpa_fit"
-Path(fit_check_dir).mkdir(parents=True, exist_ok=True)
 
 # fit using the Levenberg-Marquardt optimiser
 fitter = Fit(sed, agnpy_ec, stat=Chi2(), method=LevMar())
@@ -353,14 +348,6 @@ results = time_function_call(fitter.fit)
 print("fit succesful?", results.succeeded)
 print(results.format())
 
-# plot final model without components
-nu = np.logspace(10, 30, 300)
-plt.errorbar(sed.x, sed.y, yerr=sed.get_error(), marker=".", ls="")
-plt.loglog(nu, agnpy_ec(nu))
-plt.xlabel(sed_x_label)
-plt.ylabel(sed_y_label)
-plt.savefig(f"{fit_check_dir}/best_fit.png")
-plt.close()
 
 logging.info("plot the final model with the individual components")
 
@@ -426,8 +413,6 @@ total_sed = synch_sed + ssc_sed + ec_dt_sed + disk_bb_sed + dt_bb_sed
 
 
 # make figure 6
-load_mpl_rc()
-plt.rcParams["text.usetex"] = True
 fig, ax = plt.subplots()
 
 ax.loglog(
@@ -458,7 +443,7 @@ ax.loglog(
     ls="-.",
     lw=1.3,
     color="dimgray",
-    label="agnpy, disk blackbody",
+    label="agnpy, disk black body",
 )
 ax.loglog(
     nu / (1 + z),
@@ -466,7 +451,7 @@ ax.loglog(
     ls=":",
     lw=1.3,
     color="dimgray",
-    label="agnpy, DT blackbody",
+    label="agnpy, DT black body",
 )
 # systematic errors in gray
 ax.errorbar(
@@ -488,7 +473,7 @@ ax.set_ylabel(sed_y_label)
 ax.set_xlim([1e9, 1e29])
 ax.set_ylim([10 ** (-13.5), 10 ** (-7.5)])
 ax.legend(
-    loc="upper center", fontsize=10, ncol=2,
+    loc="upper center", fontsize=9.5, ncol=2,
 )
 
 Path("figures").mkdir(exist_ok=True)

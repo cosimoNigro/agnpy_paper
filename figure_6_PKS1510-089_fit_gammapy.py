@@ -5,7 +5,6 @@ from pathlib import Path
 import numpy as np
 import astropy.units as u
 from astropy.constants import k_B, m_e, c, G, M_sun
-from astropy.table import Table
 from astropy.coordinates import Distance
 import matplotlib.pyplot as plt
 from utils import time_function_call
@@ -16,7 +15,7 @@ from agnpy.emission_regions import Blob
 from agnpy.synchrotron import Synchrotron
 from agnpy.compton import SynchrotronSelfCompton, ExternalCompton
 from agnpy.targets import SSDisk, RingDustTorus
-from agnpy.utils.plot import load_mpl_rc, sed_x_label, sed_y_label
+from agnpy.utils.plot import sed_x_label, sed_y_label
 
 # gammapy modules
 from gammapy.modeling.models import (
@@ -305,10 +304,6 @@ dataset_ec.mask_fit = dataset_ec.data.energy_ref > E_min_fit
 
 logging.info("performing the fit")
 
-# directory to store the checks performed on the fit
-fit_check_dir = "figures/figure_6_checks_gammapy_fit"
-Path(fit_check_dir).mkdir(parents=True, exist_ok=True)
-
 # define the fitter
 fitter = Fit([dataset_ec])
 results = time_function_call(fitter.run, optimize_opts={"print_level": 1})
@@ -316,16 +311,6 @@ results = time_function_call(fitter.run, optimize_opts={"print_level": 1})
 print(results)
 print(agnpy_ec.parameters.to_table())
 
-# plot best-fit model and covariance
-flux_points.plot(energy_unit="eV", energy_power=2)
-agnpy_ec.plot(energy_range=[1e-6, 1e15] * u.eV, energy_unit="eV", energy_power=2)
-plt.ylim([10 ** (-13.5), 10 ** (-7.5)])
-plt.savefig(f"{fit_check_dir}/best_fit.png")
-plt.close()
-
-agnpy_ec.covariance.plot_correlation()
-plt.savefig(f"{fit_check_dir}/correlation_matrix.png")
-plt.close()
 
 logging.info("plot the final model with the individual components")
 
@@ -394,10 +379,8 @@ total_sed = synch_sed + ssc_sed + ec_dt_sed + disk_bb_sed + dt_bb_sed
 
 
 # make figure 6
-load_mpl_rc()
-plt.rcParams["text.usetex"] = True
-
 fig, ax = plt.subplots()
+
 ax.loglog(
     nu / (1 + z), total_sed, ls="-", lw=2.1, color="crimson", label="agnpy, total"
 )
@@ -426,7 +409,7 @@ ax.loglog(
     ls="-.",
     lw=1.3,
     color="dimgray",
-    label="agnpy, disk blackbody",
+    label="agnpy, disk black body",
 )
 ax.loglog(
     nu / (1 + z),
@@ -434,7 +417,7 @@ ax.loglog(
     ls=":",
     lw=1.3,
     color="dimgray",
-    label="agnpy, DT blackbody",
+    label="agnpy, DT black body",
 )
 # systematic errors in gray
 ax.errorbar(
@@ -462,7 +445,7 @@ ax.set_ylabel(sed_y_label)
 ax.set_xlim([1e9, 1e29])
 ax.set_ylim([10 ** (-13.5), 10 ** (-7.5)])
 ax.legend(
-    loc="upper center", fontsize=10, ncol=2,
+    loc="upper center", fontsize=9.5, ncol=2,
 )
 Path("figures").mkdir(exist_ok=True)
 
