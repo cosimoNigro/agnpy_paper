@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from agnpy.emission_regions import Blob
 from agnpy.targets import CMB
 from agnpy.compton import ExternalCompton
-from agnpy.utils.plot import load_mpl_rc, sed_x_label, sed_y_label
+from agnpy.utils.plot import sed_x_label, sed_y_label
 from pathlib import Path
 from utils import time_sed_flux
 
@@ -75,9 +75,6 @@ sed_ec_jetset = jet.spectral_components.EC_CMB.SED.nuFnu
 
 
 # make figure 11
-load_mpl_rc()
-plt.rcParams["text.usetex"] = True
-
 # gridspec plot setting
 fig = plt.figure(tight_layout=True)
 spec = gridspec.GridSpec(ncols=1, nrows=2, height_ratios=[2, 1], figure=fig)
@@ -88,8 +85,8 @@ ax2 = fig.add_subplot(spec[1, 0], sharex=ax1)
 ax1.loglog(nu_ec, sed_ec, ls="-", lw=2.1, color="crimson", label="agnpy")
 ax1.loglog(nu_ec, sed_ec_jetset, ls="--", color="dodgerblue", label="jetset")
 ax1.set_ylabel(sed_y_label)
-ax1.legend(loc="best", fontsize=10)
-ax1.set_title("EC on CMB, " + r"$z=1$")
+ax1.legend(loc="best", fontsize=12)
+ax1.set_title("EC on CMB, " + r"$z=1$", fontsize=15)
 
 # plot the deviation from the reference in the bottom panel
 deviation_ref = sed_ec / sed_ec_jetset - 1
@@ -98,14 +95,12 @@ ax2.grid(False)
 ax2.axhline(0, ls="-", color="darkgray")
 ax2.axhline(0.2, ls="--", color="darkgray")
 ax2.axhline(-0.2, ls="--", color="darkgray")
-ax2.axhline(0.3, ls="-.", color="darkgray")
-ax2.axhline(-0.3, ls="-.", color="darkgray")
 ax2.set_ylim([-0.5, 0.5])
 ax2.set_yticks([-0.4, -0.2, 0.0, 0.2, 0.4])
 ax2.semilogx(
     nu_ec, deviation_ref, ls="--", lw=1.5, color="dodgerblue", label="jetset",
 )
-ax2.legend(loc="best", fontsize=10)
+ax2.legend(loc="best", fontsize=12)
 ax2.set_xlabel(sed_x_label)
 ax2.set_ylabel(r"$\frac{\nu F_{\nu, \rm agnpy}}{\nu F_{\nu, \rm ref}} - 1$")
 
