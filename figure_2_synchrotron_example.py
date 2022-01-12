@@ -3,7 +3,7 @@ import astropy.units as u
 from astropy.coordinates import Distance
 from agnpy.emission_regions import Blob
 from agnpy.synchrotron import Synchrotron
-from agnpy.utils.plot import plot_sed, load_mpl_rc
+from agnpy.utils.plot import plot_sed
 import matplotlib.pyplot as plt
 from pathlib import Path
 from utils import time_sed_flux
@@ -33,8 +33,6 @@ sed = time_sed_flux(synch, nu)
 
 
 # make figure 2
-load_mpl_rc()
-plt.rcParams["text.usetex"] = True
 fig, ax = plt.subplots()
 
 plot_sed(nu, sed, ax=ax, color="k", lw=2, label="synchrotron")

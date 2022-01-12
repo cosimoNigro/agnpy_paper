@@ -3,7 +3,6 @@ import astropy.units as u
 from astropy.constants import M_sun
 from agnpy.emission_regions import Blob
 from agnpy.targets import CMB, SSDisk, SphericalShellBLR, RingDustTorus
-from agnpy.utils.plot import load_mpl_rc
 import matplotlib.pyplot as plt
 from pathlib import Path
 from utils import time_function_call
@@ -50,8 +49,6 @@ u_syn = blob.u_ph_synch
 
 
 # make figure 3
-load_mpl_rc()
-plt.rcParams["text.usetex"] = True
 fig, ax = plt.subplots()
 u_label = r"$u'\,/\,({\rm erg}\,{\rm cm}^{-3})$"
 r_label = r"$r\,/\,{\rm cm}$"
@@ -75,9 +72,9 @@ ax.axhline(
     label="synchrotron",
 )
 
-ax.legend(loc="best")
-ax.set_xlabel(r_label, fontsize=12)
-ax.set_ylabel(u_label, fontsize=12)
+ax.legend(loc="best", fontsize=12)
+ax.set_xlabel(r_label)
+ax.set_ylabel(u_label)
 
 Path("figures").mkdir(exist_ok=True)
 fig.savefig("figures/figure_3.png")

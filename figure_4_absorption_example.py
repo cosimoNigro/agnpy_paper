@@ -3,7 +3,6 @@ import astropy.units as u
 from agnpy.emission_regions import Blob
 from agnpy.targets import lines_dictionary, SphericalShellBLR, RingDustTorus
 from agnpy.absorption import Absorption
-from agnpy.utils.plot import load_mpl_rc
 import matplotlib.pyplot as plt
 from pathlib import Path
 from utils import time_tau
@@ -88,8 +87,6 @@ tau_ext = tau_blr_ly_alpha + tau_blr_H_alpha + tau_dt
 
 
 # make figure 4
-load_mpl_rc()
-plt.rcParams["text.usetex"] = True
 fig, ax = plt.subplots()
 
 ax.loglog(
@@ -122,8 +119,8 @@ ax.fill_between(
     nu, np.zeros(len(nu)), 1e3 * tau_synch, alpha=0.6, color="lightseagreen"
 )
 
-ax.legend(loc="best", fontsize=11)
-ax.set_xlabel(r"$\nu\,/\,Hz$")
+ax.legend(loc="best", fontsize=12)
+ax.set_xlabel(r"$\nu\,/\,{\rm Hz}$")
 ax.set_ylabel(r"$\tau_{\gamma \gamma}$")
 ax.set_ylim([1e-1, 1e3])
 
