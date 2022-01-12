@@ -97,7 +97,7 @@ ax1.loglog(
 )
 ax1.set_ylabel(sed_y_label)
 ax1.legend(loc="best", fontsize=12)
-ax1.set_title("EC on ring DT, " + r"$r=10^{21}\,{\rm cm}$", fontsize=14)
+ax1.set_title("EC on ring DT, " + r"$r=10^{21}\,{\rm cm}$", fontsize=15)
 
 # changing azimuth angle grid
 for sed, label, color in zip(
@@ -110,7 +110,7 @@ ax2.loglog(
     nu, seds_variable_phi[-1], ls="--", color=colors[-1], label=labels_variable_phi[-1]
 )
 ax2.legend(loc="best", fontsize=12)
-ax2.set_title("EC on ring DT, " + r"$r=10^{21}\,{\rm cm}$", fontsize=14)
+ax2.set_title("EC on ring DT, " + r"$r=10^{21}\,{\rm cm}$", fontsize=15)
 
 # plot the deviation from the denser SED in the bottom panel
 for sed, label, color in zip(

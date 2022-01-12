@@ -26,8 +26,7 @@ The repository contains the following files:
 ├── figure_11_ec_cmb_validation.py
 ├── figure_12_tau_blr_validation.py
 ├── figure_13_tau_dt_validation.py
-├── appendix_B_absorption_resolution.py
-├── appendix_B_sed_resolution.py
+├── figure_appendix_C_sed_resolution.py
 └── utils.py
 
 ```
