@@ -94,7 +94,7 @@ ax.loglog(
     tau_blr_ly_alpha,
     lw=2,
     ls="--",
-    label="BLR, " + r"${\rm Ly\,\alpha}$" + " shell",
+    label="BLR, " + r"${\rm Ly\alpha}$" + " shell",
     color="crimson",
 )
 ax.loglog(
@@ -102,7 +102,7 @@ ax.loglog(
     tau_blr_H_alpha,
     lw=2,
     ls="--",
-    label="BLR, " + r"${\rm H\,\alpha}$" + " shell",
+    label="BLR, " + r"${\rm H\alpha}$" + " shell",
     color="dodgerblue",
 )
 ax.loglog(nu, tau_dt, lw=2, ls="--", label="DT", color="goldenrod")
