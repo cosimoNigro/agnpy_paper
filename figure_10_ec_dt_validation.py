@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from agnpy.emission_regions import Blob
 from agnpy.targets import PointSourceBehindJet, RingDustTorus
 from agnpy.compton import ExternalCompton
-from agnpy.utils.plot import load_mpl_rc, sed_x_label, sed_y_label
+from agnpy.utils.plot import sed_x_label, sed_y_label
 from pathlib import Path
 from utils import reproduce_sed, time_sed_flux
 
@@ -137,9 +137,6 @@ sed_ec_far_jetset = jet.spectral_components.EC_DT.SED.nuFnu
 
 
 # make figure 10
-load_mpl_rc()
-plt.rcParams["text.usetex"] = True
-
 # gridspec plot setting
 fig = plt.figure(figsize=(12, 6), tight_layout=True)
 spec = gridspec.GridSpec(ncols=2, nrows=2, height_ratios=[2, 1], figure=fig)

@@ -6,7 +6,7 @@ from astropy.coordinates import Distance
 from agnpy.emission_regions import Blob
 from agnpy.synchrotron import Synchrotron
 from agnpy.compton import SynchrotronSelfCompton
-from agnpy.utils.plot import load_mpl_rc, sed_x_label, sed_y_label
+from agnpy.utils.plot import sed_x_label, sed_y_label
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 from pathlib import Path
@@ -96,9 +96,6 @@ sed_ssc_jetset = jet.spectral_components.SSC.SED.nuFnu
 
 
 # make figure 7
-load_mpl_rc()
-plt.rcParams["text.usetex"] = True
-
 # gridspec plot setting
 fig = plt.figure(figsize=(12, 6), tight_layout=True)
 spec = gridspec.GridSpec(ncols=2, nrows=2, height_ratios=[2, 1], figure=fig)
@@ -127,7 +124,7 @@ ax1.loglog(
     nu_synch_jetset, sed_synch_jetset, ls="--", color="dodgerblue", label="jetset"
 )
 ax1.set_ylabel(sed_y_label)
-ax1.legend(loc="best")
+ax1.legend(loc="best", fontsize=10)
 ax1.set_title("synchrotron")
 ax1.set_ylim([1e-14, 1e-9])
 
@@ -143,7 +140,7 @@ ax2.loglog(
     label="Fig. 7.4, Dermer \& Menon (2009)",
 )
 ax2.loglog(nu_ssc_jetset, sed_ssc_jetset, ls="--", color="dodgerblue", label="jetset")
-ax2.legend(loc="best")
+ax2.legend(loc="best", fontsize=10)
 ax2.set_title("synchrotron self-Compton")
 
 # plot the deviation from the synchrotron references in the bottom panel
