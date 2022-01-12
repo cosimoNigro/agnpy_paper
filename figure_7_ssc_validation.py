@@ -124,8 +124,8 @@ ax1.loglog(
     nu_synch_jetset, sed_synch_jetset, ls="--", color="dodgerblue", label="jetset"
 )
 ax1.set_ylabel(sed_y_label)
-ax1.legend(loc="best", fontsize=10)
-ax1.set_title("synchrotron")
+ax1.legend(loc="best", fontsize=12)
+ax1.set_title("synchrotron", fontsize=15)
 ax1.set_ylim([1e-14, 1e-9])
 
 # SSC SEDs
@@ -140,8 +140,8 @@ ax2.loglog(
     label="Fig. 7.4, Dermer \& Menon (2009)",
 )
 ax2.loglog(nu_ssc_jetset, sed_ssc_jetset, ls="--", color="dodgerblue", label="jetset")
-ax2.legend(loc="best", fontsize=10)
-ax2.set_title("synchrotron self-Compton")
+ax2.legend(loc="best", fontsize=12)
+ax2.set_title("synchrotron self-Compton", fontsize=15)
 
 # plot the deviation from the synchrotron references in the bottom panel
 deviation_synch_dermer = sed_synch_agnpy_dermer / sed_synch_dermer - 1
@@ -150,8 +150,6 @@ ax3.grid(False)
 ax3.axhline(0, ls="-", color="darkgray")
 ax3.axhline(0.2, ls="--", color="darkgray")
 ax3.axhline(-0.2, ls="--", color="darkgray")
-ax3.axhline(0.3, ls="-.", color="darkgray")
-ax3.axhline(-0.3, ls="-.", color="darkgray")
 ax3.set_ylim([-0.5, 0.5])
 ax3.set_yticks([-0.4, -0.2, 0.0, 0.2, 0.4])
 ax3.semilogx(
@@ -168,7 +166,7 @@ ax3.semilogx(
     color="dodgerblue",
     label="jetset",
 )
-ax3.legend(loc="best", fontsize=10)
+ax3.legend(loc="best", fontsize=11)
 ax3.set_xlabel(sed_x_label)
 ax3.set_ylabel(r"$\frac{\nu F_{\nu, \rm agnpy}}{\nu F_{\nu, \rm ref}} - 1$")
 
@@ -179,8 +177,6 @@ ax4.grid(False)
 ax4.axhline(0, ls="-", color="darkgray")
 ax4.axhline(0.2, ls="--", color="darkgray")
 ax4.axhline(-0.2, ls="--", color="darkgray")
-ax4.axhline(0.3, ls="-.", color="darkgray")
-ax4.axhline(-0.3, ls="-.", color="darkgray")
 ax4.set_ylim([-0.5, 0.5])
 ax4.set_yticks([-0.4, -0.2, 0.0, 0.2, 0.4])
 ax4.semilogx(
@@ -194,7 +190,7 @@ ax4.semilogx(
 ax4.semilogx(
     nu_ssc_jetset, deviation_ssc_jetset, ls="--", color="dodgerblue", label="jetset",
 )
-ax4.legend(loc="best", fontsize=10)
+ax4.legend(loc="best", fontsize=11)
 ax4.set_xlabel(sed_x_label)
 
 Path("figures").mkdir(exist_ok=True)

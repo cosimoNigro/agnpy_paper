@@ -149,8 +149,10 @@ ax1.loglog(
 )
 ax1.loglog(nu_ec, sed_ec_near_jetset, ls="--", color="dodgerblue", label="jetset")
 ax1.set_ylabel(sed_y_label)
-ax1.legend(loc="best", fontsize=10)
-ax1.set_title("EC on Shakura Sunyaev disk, " + r"$r=10^{17}\,{\rm cm} < R_{\rm out}$")
+ax1.legend(loc="best", fontsize=12)
+ax1.set_title(
+    "EC on Shakura Sunyaev disk, " + r"$r=10^{17}\,{\rm cm} < R_{\rm out}$", fontsize=15
+)
 
 # SED far from the disk
 ax2.loglog(
@@ -173,8 +175,11 @@ ax2.loglog(
 ax2.loglog(nu_ec, sed_ec_far_jetset, ls="--", color="dodgerblue", label="jetset")
 # shade the area between the two SED of the point source approximations
 ax2.fill_between(nu_ec, sed_ec_ps_in, sed_ec_ps_out, color="silver")
-ax2.legend(loc="best", fontsize=10)
-ax2.set_title("EC on Shakura Sunyaev disk, " + r"$r=10^{21}\,{\rm cm} \gg R_{\rm out}$")
+ax2.legend(loc="best", fontsize=12)
+ax2.set_title(
+    "EC on Shakura Sunyaev disk, " + r"$r=10^{21}\,{\rm cm} \gg R_{\rm out}$",
+    fontsize=15,
+)
 
 # plot the deviation from the references in the bottom panel
 deviation_ref = sed_ec_near_finke / sed_ref - 1
@@ -184,8 +189,6 @@ ax3.grid(False)
 ax3.axhline(0, ls="-", color="darkgray")
 ax3.axhline(0.2, ls="--", color="darkgray")
 ax3.axhline(-0.2, ls="--", color="darkgray")
-ax3.axhline(0.3, ls="-.", color="darkgray")
-ax3.axhline(-0.3, ls="-.", color="darkgray")
 ax3.axhline(0.5, ls=":", color="darkgray")
 ax3.axhline(-0.5, ls=":", color="darkgray")
 ax3.set_ylim([-1.1, 1.1])
@@ -196,7 +199,7 @@ ax3.semilogx(
 ax3.semilogx(
     nu_ec, deviation_jetset_near, ls="--", color="dodgerblue", label="jetset",
 )
-ax3.legend(loc="best", fontsize=10)
+ax3.legend(loc="best", fontsize=11)
 ax3.set_xlabel(sed_x_label)
 ax3.set_ylabel(r"$\frac{\nu F_{\nu, \rm agnpy}}{\nu F_{\nu, \rm ref}} - 1$")
 
@@ -209,8 +212,6 @@ ax4.grid(False)
 ax4.axhline(0, ls="-", color="darkgray")
 ax4.axhline(0.2, ls="--", color="darkgray")
 ax4.axhline(-0.2, ls="--", color="darkgray")
-ax4.axhline(0.3, ls="-.", color="darkgray")
-ax4.axhline(-0.3, ls="-.", color="darkgray")
 ax4.axhline(0.5, ls=":", color="darkgray")
 ax4.axhline(-0.5, ls=":", color="darkgray")
 ax4.set_ylim([-1.1, 1.1])

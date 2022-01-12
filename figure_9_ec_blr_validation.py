@@ -149,10 +149,11 @@ ax1.loglog(nu_ec, sed_ec_in, ls="-", lw=2.1, color="crimson", label="agnpy")
 ax1.loglog(nu_ref, sed_ref, ls="--", color="k", label="Fig. 10, Finke (2016)")
 ax1.loglog(nu_ec, sed_ec_in_jetset, ls="--", color="dodgerblue", label="jetset")
 ax1.set_ylabel(sed_y_label)
-ax1.legend(loc="best", fontsize=10)
+ax1.legend(loc="best", fontsize=12)
 ax1.set_title(
     "EC on spherical shell BLR, "
-    + r"$r=1 \times 10^{16}\,{\rm cm} < R_{\rm Ly \alpha}$"
+    + r"$r=1 \times 10^{16}\,{\rm cm} < R_{\rm Ly \alpha}$",
+    fontsize=15,
 )
 
 # SED outside the BLR
@@ -165,10 +166,11 @@ ax2.loglog(
 ax2.loglog(
     nu_ec, sed_ec_out_jetset, ls="--", color="dodgerblue", label="jetset",
 )
-ax2.legend(loc="best", fontsize=10)
+ax2.legend(loc="best", fontsize=12)
 ax2.set_title(
     "EC on spherical shell BLR, "
-    + r"$r=1 \times 10^{20}\,{\rm cm} \gg R_{\rm Ly \alpha}$"
+    + r"$r=1 \times 10^{20}\,{\rm cm} \gg R_{\rm Ly \alpha}$",
+    fontsize=15,
 )
 
 # plot the deviation from the references in the bottom panel
@@ -179,8 +181,6 @@ ax3.grid(False)
 ax3.axhline(0, ls="-", color="darkgray")
 ax3.axhline(0.2, ls="--", color="darkgray")
 ax3.axhline(-0.2, ls="--", color="darkgray")
-ax3.axhline(0.3, ls="-.", color="darkgray")
-ax3.axhline(-0.3, ls="-.", color="darkgray")
 ax3.axhline(0.5, ls=":", color="darkgray")
 ax3.axhline(-0.5, ls=":", color="darkgray")
 ax3.set_ylim([-1.1, 1.1])
@@ -191,7 +191,7 @@ ax3.semilogx(
 ax3.semilogx(
     nu_ec, deviation_jetset_in, ls="--", color="dodgerblue", label="jetset",
 )
-ax3.legend(loc="best", fontsize=10)
+ax3.legend(loc="best", fontsize=11)
 ax3.set_xlabel(sed_x_label)
 ax3.set_ylabel(r"$\frac{\nu F_{\nu, \rm agnpy}}{\nu F_{\nu, \rm ref}} - 1$")
 
@@ -203,8 +203,6 @@ ax4.grid(False)
 ax4.axhline(0, ls="-", color="darkgray")
 ax4.axhline(0.2, ls="--", color="darkgray")
 ax4.axhline(-0.2, ls="--", color="darkgray")
-ax4.axhline(0.3, ls="-.", color="darkgray")
-ax4.axhline(-0.3, ls="-.", color="darkgray")
 ax4.axhline(0.5, ls=":", color="darkgray")
 ax4.axhline(-0.5, ls=":", color="darkgray")
 ax4.set_ylim([-1.1, 1.1])
@@ -213,7 +211,7 @@ ax4.semilogx(
     nu_ec, deviation_approx, ls="--", color="k", label="point-source approximation",
 )
 ax4.semilogx(nu_ec, deviation_jetset_out, ls="--", color="dodgerblue", label="jetset")
-ax4.legend(loc="best", fontsize=10)
+ax4.legend(loc="best", fontsize=11)
 ax4.set_xlabel(sed_x_label)
 
 Path("figures").mkdir(exist_ok=True)
