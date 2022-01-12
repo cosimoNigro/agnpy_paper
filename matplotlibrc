@@ -544,7 +544,7 @@ ytick.minor.visible: True   # visibility of minor ticks on y-axis
 ## * FIGURE                                                                  *
 ## ***************************************************************************
 ## See https://matplotlib.org/api/figure_api.html#matplotlib.figure.Figure
-#figure.titlesize:   large     # size of the figure title (``Figure.suptitle()``)
+figure.titlesize:   medium     # size of the figure title (``Figure.suptitle()``)
 #figure.titleweight: normal    # weight of the figure title
 #figure.figsize:     6.4, 4.8  # figure size in inches
 figure.dpi:         150       # figure dots per inch
