@@ -5,7 +5,6 @@ import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 from agnpy.targets import SphericalShellBLR, PointSourceBehindJet
 from agnpy.absorption import Absorption
-from agnpy.utils.plot import load_mpl_rc
 from pathlib import Path
 from utils import time_tau
 
@@ -41,9 +40,6 @@ tau_out_ps_blr_mis = time_tau(abs_out_ps_blr_mis, nu_ref)
 
 
 # make figure 12
-load_mpl_rc()
-plt.rcParams["text.usetex"] = True
-
 # gridspec plot setting
 fig = plt.figure(figsize=(12, 6), tight_layout=True)
 spec = gridspec.GridSpec(ncols=2, nrows=2, height_ratios=[2, 1], figure=fig)
@@ -58,10 +54,11 @@ ax1.loglog(
     nu_ref, tau_ref, ls="--", lw=1.5, color="k", label="Fig. 14, Finke (2016)",
 )
 ax1.set_ylabel(r"$\tau_{\gamma\gamma}$")
-ax1.legend(loc="best", fontsize=10)
+ax1.legend(loc="best", fontsize=12)
 ax1.set_title(
     "abs. on spherical shell BLR, "
-    + r"$r=1.1 \times 10^{16}\,{\rm cm} < R_{\rm Ly \alpha},\,\mu_{\rm s}=0$"
+    + r"$r=1.1 \times 10^{16}\,{\rm cm} < R_{\rm Ly \alpha},\,\mu_{\rm s}=0$",
+    fontsize=15,
 )
 ax1.set_ylim([1e-1, 1e3])
 
@@ -82,10 +79,11 @@ ax2.loglog(
     color="k",
     label="agnpy, point-source approximation",
 )
-ax2.legend(loc="best", fontsize=10)
+ax2.legend(loc="best", fontsize=12)
 ax2.set_title(
     "abs. on spherical shell BLR, "
-    + r"$r=1.1 \times 10^{20}\,{\rm cm} \gg R_{\rm Ly \alpha},\,\mu_{\rm s} \neq 0$"
+    + r"$r=1.1 \times 10^{20}\,{\rm cm} \gg R_{\rm Ly \alpha},\,\mu_{\rm s} \neq 0$",
+    fontsize=15,
 )
 ax2.set_ylim([1e-6, 1e-2])
 
@@ -96,14 +94,12 @@ ax3.grid(False)
 ax3.axhline(0, ls="-", color="darkgray")
 ax3.axhline(0.2, ls="--", color="darkgray")
 ax3.axhline(-0.2, ls="--", color="darkgray")
-ax3.axhline(0.3, ls=":", color="darkgray")
-ax3.axhline(-0.3, ls=":", color="darkgray")
 ax3.set_ylim([-0.5, 0.5])
 ax3.set_yticks([-0.4, -0.2, 0.0, 0.2, 0.4])
 ax3.semilogx(
     nu_ref, deviation_ref, ls="--", lw=1.5, color="k", label="Fig. 14, Finke (2016)",
 )
-ax3.legend(loc="best", fontsize=10)
+ax3.legend(loc="best", fontsize=12)
 ax3.set_xlabel(r"$\nu\,/\,{\rm Hz}$")
 ax3.set_ylabel(
     r"$\frac{\tau_{\gamma\gamma, \rm agnpy}}{\tau_{\gamma\gamma, \rm ref}} - 1$"
@@ -116,8 +112,6 @@ ax4.grid(False)
 ax4.axhline(0, ls="-", color="darkgray")
 ax4.axhline(0.2, ls="--", color="darkgray")
 ax4.axhline(-0.2, ls="--", color="darkgray")
-ax4.axhline(0.3, ls=":", color="darkgray")
-ax4.axhline(-0.3, ls=":", color="darkgray")
 ax4.set_ylim([-0.5, 0.5])
 ax4.set_yticks([-0.4, -0.2, 0.0, 0.2, 0.4])
 ax4.semilogx(
@@ -128,7 +122,7 @@ ax4.semilogx(
     color="k",
     label="point-source approximation",
 )
-ax4.legend(loc="best", fontsize=10)
+ax4.legend(loc="best", fontsize=12)
 ax4.set_xlabel(r"$\nu\,/\,{\rm Hz}$")
 
 Path("figures").mkdir(exist_ok=True)
