@@ -437,7 +437,7 @@ ax.errorbar(
     marker=".",
     ls="",
     color="k",
-    label="PKS 1510-089, Ahnen et al. (2017), period B",
+    label="PKS 1510-089,\n Ahnen et al. (2017), period B",
 )
 
 ax.set_xlabel(sed_x_label)
@@ -445,7 +445,7 @@ ax.set_ylabel(sed_y_label)
 ax.set_xlim([1e9, 1e29])
 ax.set_ylim([10 ** (-13.5), 10 ** (-7.5)])
 ax.legend(
-    loc="upper center", fontsize=9.5, ncol=2,
+    loc="upper center", fontsize=11, ncol=2,
 )
 Path("figures").mkdir(exist_ok=True)
 
