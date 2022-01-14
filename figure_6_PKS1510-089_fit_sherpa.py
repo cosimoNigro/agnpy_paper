@@ -443,7 +443,7 @@ ax.loglog(
     ls="-.",
     lw=1.3,
     color="dimgray",
-    label="agnpy, disk black body",
+    label="agnpy, disc black body",
 )
 ax.loglog(
     nu / (1 + z),

@@ -54,7 +54,7 @@ u_label = r"$u'\,/\,({\rm erg}\,{\rm cm}^{-3})$"
 r_label = r"$r\,/\,{\rm cm}$"
 
 ax.axhline(u_cmb.to_value("erg cm-3"), lw=2, color="k", label="CMB")
-ax.loglog(r, u_disk, lw=2, color="crimson", label="disk")
+ax.loglog(r, u_disk, lw=2, color="crimson", label="disc")
 ax.loglog(r, u_blr, lw=2, color="dodgerblue", label="broad line region")
 ax.loglog(r, u_dt, lw=2, color="goldenrod", label="dust torus")
 ax.axhline(

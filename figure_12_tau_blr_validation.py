@@ -58,7 +58,7 @@ ax1.legend(loc="best", fontsize=12)
 ax1.set_title(
     "abs. on spherical shell BLR, "
     + r"$r=1.1 \times 10^{16}\,{\rm cm} < R_{\rm Ly \alpha},\,\mu_{\rm s}=0$",
-    fontsize=15,
+    fontsize=14,
 )
 ax1.set_ylim([1e-1, 1e3])
 
@@ -83,7 +83,7 @@ ax2.legend(loc="best", fontsize=12)
 ax2.set_title(
     "abs. on spherical shell BLR, "
     + r"$r=1.1 \times 10^{20}\,{\rm cm} \gg R_{\rm Ly \alpha},\,\mu_{\rm s} \neq 0$",
-    fontsize=15,
+    fontsize=14,
 )
 ax2.set_ylim([1e-6, 1e-2])
 

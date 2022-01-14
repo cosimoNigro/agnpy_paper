@@ -151,7 +151,7 @@ ax1.loglog(nu_ec, sed_ec_near_jetset, ls="--", color="dodgerblue", label="jetset
 ax1.set_ylabel(sed_y_label)
 ax1.legend(loc="best", fontsize=12)
 ax1.set_title(
-    "EC on Shakura Sunyaev disk, " + r"$r=10^{17}\,{\rm cm} < R_{\rm out}$", fontsize=15
+    "EC on Shakura Sunyaev disc, " + r"$r=10^{17}\,{\rm cm} < R_{\rm out}$", fontsize=15
 )
 
 # SED far from the disk
@@ -177,7 +177,7 @@ ax2.loglog(nu_ec, sed_ec_far_jetset, ls="--", color="dodgerblue", label="jetset"
 ax2.fill_between(nu_ec, sed_ec_ps_in, sed_ec_ps_out, color="silver")
 ax2.legend(loc="best", fontsize=12)
 ax2.set_title(
-    "EC on Shakura Sunyaev disk, " + r"$r=10^{21}\,{\rm cm} \gg R_{\rm out}$",
+    "EC on Shakura Sunyaev disc, " + r"$r=10^{21}\,{\rm cm} \gg R_{\rm out}$",
     fontsize=15,
 )
 
